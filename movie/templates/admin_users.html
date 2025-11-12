@@ -1,0 +1,244 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+
+{% block title %}用户管理{% endblock %}
+
+{% block css %}
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+    .table td.text-start {
+        text-align: left !important;
+    }
+    .btn-action {
+        transition: all 0.2s ease;
+        min-width: 100px;
+        margin-bottom: 5px;
+    }
+    .btn-action:hover {
+        transform: scale(1.05);
+    }
+    .search-bar {
+        margin-bottom: 1.5rem;
+    }
+    .modal-body {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+    .modal-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+    .card {
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .card-header {
+        border-bottom: 1px solid #eee;
+    }
+</style>
+{% endblock %}
+
+{% block main-container %}
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card rounded shadow h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 font-weight-bold">用户管理</h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- 搜索区域 -->
+                    <div class="search-bar">
+                        <form class="d-flex flex-1 flex-sm-auto w-auto" method="get">
+                            <input class="form-control me-2" name="search" type="search"
+                                   placeholder="模糊搜索（账号/昵称/邮箱）" aria-label="Search"
+                                   value="{{ search_data }}" style="border-radius: 4px 0 0 4px;">
+                            <button class="btn btn-primary" type="submit" style="border-radius: 0 4px 4px 0;">
+                                <i class="fa fa-search me-1"></i> 搜索
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 表格区域 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" style="width: 15%;">用户ID</th>
+                                    <th scope="col" style="width: 10%;">用户账号</th>
+                                    <th scope="col" style="width: 10%;">用户昵称</th>
+                                    <th scope="col" style="width: 8%;">性别</th>
+                                    <th scope="col" style="width: 8%;">年龄</th>
+                                    <th scope="col" style="width: 20%;">邮箱</th>
+                                    <th scope="col" style="width: 15%;">创建时间</th>
+                                    <th scope="col" style="width: 14%;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for obj in queryset %}
+                                    <tr>
+                                        <td>{{ obj.user_ID }}</td>
+                                        <td class="text-start">{{ obj.nickname|default:"-" }}</td>
+                                        <td class="text-start">{{ obj.username }}</td>
+                                        <td>{{ obj.get_sex_display }}</td>
+                                        <td>{{ obj.age|default:"-" }}</td>
+                                        <td class="text-start">{{ obj.email }}</td>
+                                        <td>{{ obj.registration }}</td>
+                                        <td>
+                                            <button id="{{ obj.user_ID }}" type="button"
+                                                    class="btn btn-primary btn-sm btn-reset btn-action d-block w-100">
+                                                <i class="fa fa-key me-1"></i> 重置密码
+                                            </button>
+                                            <button id="{{ obj.user_ID }}" type="button"
+                                                    class="btn btn-danger btn-sm btn-delete btn-action d-block w-100">
+                                                <i class="fa fa-trash me-1"></i> 删除
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="8" class="py-4 text-muted text-center">
+                                            <i class="fa fa-user-o me-2"></i> 暂无用户数据
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页区域 -->
+                    {% if queryset %}
+                        <div class="text-center mt-4">
+                            <ul class="pagination justify-content-center">
+                                {{ page_string }}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重置密码模态框 -->
+    <div class="modal fade" id="resetModal" tabindex="-1" role="dialog" aria-labelledby="resetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content rounded shadow">
+                <div class="modal-header bg-light">
+                    <h4 class="modal-title" id="resetModalLabel">重置密码</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <i class="fa fa-key modal-icon text-primary"></i>
+                    <h5 class="mb-3">是否确定重置密码？</h5>
+                    <p class="text-muted small mb-0">重置后，密码将默认设置为 <strong>654321</strong></p>
+                    <p class="text-muted small">请提醒用户登录后及时修改密码</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                    <button id="btnConfirmReset" type="button" class="btn btn-primary">确定重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content rounded shadow">
+                <div class="modal-header bg-light">
+                    <h4 class="modal-title" id="deleteModalLabel">确认删除</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <i class="fa fa-exclamation-triangle modal-icon text-warning"></i>
+                    <h5 class="mb-3">是否确定删除该用户？</h5>
+                    <p class="text-muted small">删除后，所有关联的相关数据都会被删除，且无法恢复</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                    <button id="btnConfirmDelete" type="button" class="btn btn-danger">确定删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    var OPERATE_ID; // 统一存储操作的用户ID
+
+    $(function () {
+        bindBtnResetEvent();
+        bindBtnConfirmResetEvent();
+        bindBtnDeleteEvent();
+        bindBtnConfirmDeleteEvent();
+    });
+
+    // 绑定“重置密码”按钮事件
+    function bindBtnResetEvent() {
+        $(".btn-reset").click(function () {
+            OPERATE_ID = $(this).attr("id");
+            $("#resetModal").modal('show');
+        });
+    }
+
+    // 绑定“确认重置”按钮事件
+    function bindBtnConfirmResetEvent() {
+        $("#btnConfirmReset").click(function () {
+            $.ajax({
+                url: "/users/reset/",
+                type: "GET",
+                data: {
+                    uid: OPERATE_ID
+                },
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        $("#resetModal").modal('hide');
+                        alert("密码重置成功！新密码为 654321");
+                        location.reload();
+                    } else {
+                        alert(res.error);
+                    }
+                }
+            });
+        });
+    }
+
+    // 绑定“删除”按钮事件
+    function bindBtnDeleteEvent() {
+        $(".btn-delete").click(function () {
+            OPERATE_ID = $(this).attr("id");
+            $("#deleteModal").modal('show');
+        });
+    }
+
+    // 绑定“确认删除”按钮事件
+    function bindBtnConfirmDeleteEvent() {
+        $("#btnConfirmDelete").click(function () {
+            $.ajax({
+                url: "/users/delete/",
+                type: "GET",
+                data: {
+                    uid: OPERATE_ID
+                },
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        $("#deleteModal").modal('hide');
+                        location.reload();
+                    } else {
+                        alert(res.error);
+                    }
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

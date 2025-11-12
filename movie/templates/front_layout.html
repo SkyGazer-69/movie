@@ -1,0 +1,419 @@
+{#{% load static %}#}
+{##}
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <meta charset="utf-8">#}
+{#    <meta name="viewport" content="width=device-width, initial-scale=1">#}
+{#    <title>电影推荐{% block title %}{% endblock %}</title>#}
+{#    <link href="//fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">#}
+{#    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">#}
+{#    <link rel="stylesheet" href="{% static 'assets/css/style-starter.css' %}">#}
+{#    {% block css %}{% endblock %}#}
+{#</head>#}
+{#<body>#}
+{#        <header id="site-header" class="fixed-top">#}
+{#        <div class="container">#}
+{#            <nav class="navbar navbar-expand-lg navbar-light">#}
+{#                <a class="navbar-brand" href="/front_index/">#}
+{#                    电影推荐#}
+{#                </a>#}
+{#                <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"#}
+{#                    data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false"#}
+{#                    aria-label="Toggle navigation">#}
+{#                    <span class="navbar-toggler-icon fa icon-expand fa-bars"></span>#}
+{#                    <span class="navbar-toggler-icon fa icon-close fa-times"></span>#}
+{#                </button>#}
+{#                <div class="collapse navbar-collapse" id="navbarScroll">#}
+{#                    <form  id="formSearch" action="/result/" method="get" class="d-flex search-header ms-lg-2 m-auto">#}
+{#                        {% csrf_token %}#}
+{#                        <input name="search" class="form-control" type="search" placeholder="请输入电影名" aria-label="Search"#}
+{#                              required>#}
+{#                        <button id="searchBtn" class="btn btn-style" type="submit"><i class="fas fa-search"></i></button>#}
+{#                    </form>#}
+{#                    <ul class="navbar-nav ms-auto my-2 my-lg-0 navbar-nav-scroll">#}
+{#                        <li class="nav-item">#}
+{#                            <a class="nav-link active" aria-current="page" href="/front_index/">首页</a>#}
+{#                        </li>#}
+{#                        <li class="nav-item">#}
+{#                            <a class="nav-link" href="/rank/">排行榜</a>#}
+{#                        </li>#}
+{#                        <li class="nav-item">#}
+{#                            <a class="nav-link" href="/depot/">影片库</a>#}
+{#                        </li>#}
+{#                        <li class="nav-item">#}
+{#                            <a class="nav-link" href="/recommend/">个性化推荐</a>#}
+{#                        </li>#}
+{#                        {% if request.user.is_authenticated %}#}
+{#                        <li class="nav-item dropdown">#}
+{#                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">#}
+{#                              欢迎您，{{ user.username }}#}
+{#                            </a>#}
+{#                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">#}
+{#                              <li><a class="dropdown-item" href="/center/">个人中心</a></li>#}
+{#                              <li><a class="dropdown-item" href="/logout/">退出登录</a></li>#}
+{#                            </ul>#}
+{#                        </li>#}
+{#                        {% else %}#}
+{#                        <li class="nav-item">#}
+{#                            <a class="nav-link" href="/login/">登录/注册</a>#}
+{#                        </li>#}
+{#                        {% endif %}#}
+{#                        {% if user.is_superuser %}#}
+{#                         <li class="nav-item">#}
+{#                            <a class="nav-link" href="/admin_index/">后台管理</a>#}
+{#                        </li>#}
+{#                        {% endif %}#}
+{#                    </ul>#}
+{#                </div>#}
+{#                <!-- toggle switch for light and dark theme -->#}
+{#                <div class="cont-ser-position">#}
+{#                    <nav class="navigation">#}
+{#                        <div class="theme-switch-wrapper">#}
+{#                            <label class="theme-switch" for="checkbox">#}
+{#                                <input type="checkbox" id="checkbox">#}
+{#                                <div class="mode-container">#}
+{#                                    <i class="gg-sun"></i>#}
+{#                                    <i class="gg-moon"></i>#}
+{#                                </div>#}
+{#                            </label>#}
+{#                        </div>#}
+{#                    </nav>#}
+{#                </div>#}
+{#                <!-- //toggle switch for light and dark theme -->#}
+{#            </nav>#}
+{#        </div>#}
+{#    </header>#}
+{#    <div>#}
+{#        {% block main-container %}<a>wouiohoih</a>{% endblock %}#}
+{#    </div>#}
+{##}
+{#    </footer>#}
+{#    <script>#}
+{#        // When the user scrolls down 20px from the top of the document, show the button#}
+{#        window.onscroll = function () {#}
+{#            scrollFunction()#}
+{#        };#}
+{##}
+{#        function scrollFunction() {#}
+{#            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {#}
+{#                document.getElementById("movetop").style.display = "block";#}
+{#            } else {#}
+{#                document.getElementById("movetop").style.display = "none";#}
+{#            }#}
+{#        }#}
+{##}
+{#        // When the user clicks on the button, scroll to the top of the document#}
+{#        function topFunction() {#}
+{#            document.body.scrollTop = 0;#}
+{#            document.documentElement.scrollTop = 0;#}
+{#        }#}
+{#    </script>#}
+{#    <!-- //move top -->#}
+{##}
+{#    <!-- common jquery plugin -->#}
+{#    <script src="{% static 'assets/js/jquery-3.3.1.min.js' %}"></script>#}
+{#    <!-- //common jquery plugin -->#}
+{##}
+{#    <!-- slider-js -->#}
+{#    <script src="{% static 'assets/js/jquery.min.js' %}"></script>#}
+{#    <script src="{% static 'assets/js/modernizr-2.6.2.min.js' %}"></script>#}
+{#    <script src="{% static 'assets/js/jquery.zoomslider.min.js' %}"></script>#}
+{#    <!-- //slider-js -->#}
+{##}
+{#    <!-- theme switch js (light and dark)-->#}
+{#    <script src="{% static 'assets/js/theme-change.js' %}"></script>#}
+{#    <!-- //theme switch js (light and dark)-->#}
+{##}
+{#    <!-- MENU-JS -->#}
+{#    <script>#}
+{#        $(window).on("scroll", function () {#}
+{#            var scroll = $(window).scrollTop();#}
+{##}
+{#            if (scroll >= 80) {#}
+{#                $("#site-header").addClass("nav-fixed");#}
+{#            } else {#}
+{#                $("#site-header").removeClass("nav-fixed");#}
+{#            }#}
+{#        });#}
+{##}
+{#        //Main navigation Active Class Add Remove#}
+{#        $(".navbar-toggler").on("click", function () {#}
+{#            $("header").toggleClass("active");#}
+{#        });#}
+{#        $(document).on("ready", function () {#}
+{#            if ($(window).width() > 991) {#}
+{#                $("header").removeClass("active");#}
+{#            }#}
+{#            $(window).on("resize", function () {#}
+{#                if ($(window).width() > 991) {#}
+{#                    $("header").removeClass("active");#}
+{#                }#}
+{#            });#}
+{#        });#}
+{#    </script>#}
+{#    <!-- //MENU-JS -->#}
+{##}
+{#    <!-- disable body scroll which navbar is in active -->#}
+{#    <script>#}
+{#        $(function () {#}
+{#            $('.navbar-toggler').click(function () {#}
+{#                $('body').toggleClass('noscroll');#}
+{#            })#}
+{#        });#}
+{#    </script>#}
+{#    <!-- //disable body scroll which navbar is in active -->#}
+{##}
+{#    <!-- bootstrap -->#}
+{#    <script src="{% static 'assets/js/bootstrap.min.js' %}"></script>#}
+{#    <!-- //bootstrap -->#}
+{#    <!-- //Js scripts -->#}
+{#    {% block js %}{% endblock %}#}
+{#</body>#}
+{##}
+{#</html>#}
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>电影推荐{% block title %}{% endblock %}</title>
+    <link href="//fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/style-starter.css' %}">
+    {% block css %}{% endblock %}
+    <style>
+        .search-suggest {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            z-index: 999;
+            margin-top: 2px;
+        }
+        .search-suggest li {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .search-suggest li:hover {
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <header id="site-header" class="fixed-top">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <a class="navbar-brand" href="/front_index/">
+                    电影推荐
+                </a>
+                <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon fa icon-expand fa-bars"></span>
+                    <span class="navbar-toggler-icon fa icon-close fa-times"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarScroll">
+                    <!-- 搜索框调整：增加相对定位容器 -->
+                    <div class="d-flex search-header ms-lg-2 m-auto" style="position: relative;">
+                        <input id="searchInput" name="search" class="form-control" type="search"
+                               placeholder="请输入电影名" aria-label="Search" required>
+                        <ul id="suggestDropdown" class="search-suggest" style="display: none;"></ul>
+                        <button id="searchBtn" class="btn btn-style" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <ul class="navbar-nav ms-auto my-2 my-lg-0 navbar-nav-scroll">
+                        <!-- 原有导航项保持不变 -->
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/front_index/">首页</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/rank/">排行榜</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/depot/">影片库</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/recommend/">个性化推荐</a>
+                        </li>
+                        {% if request.user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              欢迎您，{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                              <li><a class="dropdown-item" href="/center/">个人中心</a></li>
+                              <li><a class="dropdown-item" href="/logout/">退出登录</a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login/">登录/注册</a>
+                        </li>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                         <li class="nav-item">
+                            <a class="nav-link" href="/admin_index/">后台管理</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <!-- toggle switch for light and dark theme -->
+                <div class="cont-ser-position">
+                    <nav class="navigation">
+                        <div class="theme-switch-wrapper">
+                            <label class="theme-switch" for="checkbox">
+                                <input type="checkbox" id="checkbox">
+                                <div class="mode-container">
+                                    <i class="gg-sun"></i>
+                                    <i class="gg-moon"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </nav>
+                </div>
+                <!-- //toggle switch for light and dark theme -->
+            </nav>
+        </div>
+    </header>
+    <div>
+        {% block main-container %}<a>wouiohoih</a>{% endblock %}
+    </div>
+
+    </footer>
+    <script>
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function () {
+            scrollFunction()
+        };
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                document.getElementById("movetop").style.display = "block";
+            } else {
+                document.getElementById("movetop").style.display = "none";
+            }
+        }
+
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+    </script>
+    <!-- //move top -->
+
+    <!-- common jquery plugin -->
+    <script src="{% static 'assets/js/jquery-3.3.1.min.js' %}"></script>
+    <!-- //common jquery plugin -->
+
+    <!-- slider-js -->
+    <script src="{% static 'assets/js/jquery.min.js' %}"></script>
+    <script src="{% static 'assets/js/modernizr-2.6.2.min.js' %}"></script>
+    <script src="{% static 'assets/js/jquery.zoomslider.min.js' %}"></script>
+    <!-- //slider-js -->
+
+    <!-- theme switch js (light and dark)-->
+    <script src="{% static 'assets/js/theme-change.js' %}"></script>
+    <!-- //theme switch js (light and dark)-->
+
+    <!-- MENU-JS -->
+    <script>
+        $(window).on("scroll", function () {
+            var scroll = $(window).scrollTop();
+
+            if (scroll >= 80) {
+                $("#site-header").addClass("nav-fixed");
+            } else {
+                $("#site-header").removeClass("nav-fixed");
+            }
+        });
+
+        //Main navigation Active Class Add Remove
+        $(".navbar-toggler").on("click", function () {
+            $("header").toggleClass("active");
+        });
+        $(document).on("ready", function () {
+            if ($(window).width() > 991) {
+                $("header").removeClass("active");
+            }
+            $(window).on("resize", function () {
+                if ($(window).width() > 991) {
+                    $("header").removeClass("active");
+                }
+            });
+        });
+    </script>
+    <!-- //MENU-JS -->
+
+    <!-- disable body scroll which navbar is in active -->
+    <script>
+        $(function () {
+            $('.navbar-toggler').click(function () {
+                $('body').toggleClass('noscroll');
+            })
+        });
+    </script>
+    <!-- //disable body scroll which navbar is in active -->
+
+    <!-- bootstrap -->
+    <script src="{% static 'assets/js/bootstrap.min.js' %}"></script>
+    <!-- //bootstrap -->
+    <!-- //Js scripts -->
+    <script>
+        $(function () {
+            // 搜索框输入触发AJAX获取建议
+            $("#searchInput").on("input", function () {
+                var keyword = $(this).val().trim();
+                if (keyword === "") {
+                    $("#suggestDropdown").hide();
+                    return;
+                }
+                $.get("/search_suggest/", { keyword: keyword }, function (data) {
+                    var html = "";
+                    if (data.length > 0) {
+                        data.forEach(function (item) {
+                            html += `<li data-url="${item.url}">${item.title}</li>`;
+                        });
+                        $("#suggestDropdown").html(html).show();
+                    } else {
+                        $("#suggestDropdown").hide();
+                    }
+                });
+            });
+
+            // 点击下拉建议跳转到详情页
+            $(document).on("click", "#suggestDropdown li", function () {
+                var url = $(this).data("url");
+                window.location.href = url;
+            });
+
+          // 点击放大镜或回车跳转到结果列表页
+            $("#searchBtn").on("click", function () {
+                window.location.href = "/result/?search=" + $("#searchInput").val().trim();
+            });
+            $("#searchInput").on("keypress", function (e) {
+                if (e.which === 13) {
+                    window.location.href = "/result/?search=" + $(this).val().trim();
+                }
+            });
+
+            // 点击其他区域隐藏下拉框
+            $(document).on("click", function (e) {
+                if (!$(e.target).closest(".search-header").length) {
+                    $("#suggestDropdown").hide();
+                }
+            });
+        });
+    </script>
+    {% block js %}{% endblock %}
+</body>
+</html>

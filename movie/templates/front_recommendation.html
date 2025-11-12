@@ -1,0 +1,50 @@
+{% extends "front_layout.html" %}
+{% load static %}
+{% block title %}-个性化推荐{% endblock %}
+{% block main-container %}
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">个性化推荐</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>个性化推荐</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-5" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <h5 class="sub-title text-center">推荐</h5>
+            <div class="row justify-content-center">
+                {% for obj in data_list %}
+                    {# 判断海报是否有效（非空且格式合法），无效则跳过显示 #}
+                    {% if obj.poster and obj.poster.strip %}
+                        <div class="col-lg-3 col-md-3 item mt-2">
+                            <div class="container mt-3">
+                                <div class="card">
+                                    <a href="/movie/{{ obj.movie_ID }}/details/">
+                                        <img class="card-img-top" src="{{ obj.poster }}" alt="Card image"
+                                             style="height: 330px;">
+                                    </a>
+                                    <div class="card-body">
+                                        <h4 class="card-title">{{ obj.name }}</h4>
+                                        <div class="rating">
+                                            <i class="fa fa-star star" aria-hidden="true"></i>
+                                            <i class="fa fa-star star" aria-hidden="true"></i>
+                                            <i class="fa fa-star star" aria-hidden="true"></i>
+                                            <i class="fa fa-star star" aria-hidden="true"></i>
+                                            <i class="fa fa-star-half-o star" aria-hidden="true"></i>
+                                            <span>{{ obj.movie_score }}/10</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

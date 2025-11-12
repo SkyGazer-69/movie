@@ -1,0 +1,550 @@
+{% extends "front_layout.html" %}
+{% load static %}
+{% block title %}-排行榜{% endblock %}
+{% block main-container %}
+    <style>
+        /* 新增样式：处理主演文字省略和卡片布局 */
+        .actor-truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* 卡片统一大小和间距 */
+        .rank-card-container {
+            padding: 10px; /* 卡片内边距 */
+        }
+        .rank-card {
+            height: 100%;
+            margin-bottom: 20px; /* 卡片底部间距 */
+        }
+        /* 图片统一尺寸和显示方式 */
+        .rank-poster {
+            width: 100%;
+            height: 200px; /* 固定图片高度 */
+            object-fit: cover; /* 保持比例填充 */
+        }
+        /* 确保卡片内容区域高度一致 */
+        .card-body {
+            min-height: 140px;
+        }
+    </style>
+
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">排行榜</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>排行榜</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-2" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <div class="h-100 p-4">
+                <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home"
+                                aria-selected="true">总榜单
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-action" type="button" role="tab"
+                                aria-controls="pills-action" aria-selected="false">动作榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-comedy" type="button" role="tab"
+                                aria-controls="pills-comedy" aria-selected="false">喜剧榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-love" type="button" role="tab"
+                                aria-controls="pills-love" aria-selected="false">爱情榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-scienceFiction" type="button" role="tab"
+                                aria-controls="pills-scienceFiction" aria-selected="false">科幻榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-terror" type="button" role="tab"
+                                aria-controls="pills-terror" aria-selected="false">恐怖榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-plot" type="button" role="tab"
+                                aria-controls="pills-plot" aria-selected="false">剧情榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-war" type="button" role="tab"
+                                aria-controls="pills-war" aria-selected="false">战争榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-crime" type="button" role="tab"
+                                aria-controls="pills-crime" aria-selected="false">犯罪榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-thriller" type="button" role="tab"
+                                aria-controls="pills-thriller" aria-selected="false">惊悚榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-cartoon" type="button" role="tab"
+                                aria-controls="pills-cartoon" aria-selected="false">动画榜
+                        </button>
+                    </li>
+                    <li class="nav-item col-lg-1" role="presentation">
+                        <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-history" type="button" role="tab"
+                                aria-controls="pills-history" aria-selected="false">历史榜
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
+                         aria-labelledby="pills-home-tab">
+                        <div class="row">
+                            {% for obj in queryset_high %}
+                                <div class="col-md-6 rank-card-container"> <!-- 增加容器控制间距 -->
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <!-- 图片加载失败处理 -->
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <!-- 导演为空显示未知 -->
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <!-- 主演文字省略处理 -->
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-action" role="tabpanel" aria-labelledby="pills-profile-tab">
+                        <div class="row">
+                            {% for obj in queryset_action %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-comedy" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_comedy %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-love" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_love %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-scienceFiction" role="tabpanel"
+                         aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_scienceFiction %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-terror" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_terror %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-plot" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_plot %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-war" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_war %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-crime" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_crime %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-thriller" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_thriller %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-cartoon" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_cartoon %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-history" role="tabpanel" aria-labelledby="pills-contact-tab">
+                        <div class="row">
+                            {% for obj in queryset_history %}
+                                <div class="col-md-6 rank-card-container">
+                                    <div class="card rank-card mb-3" style="max-width: 540px;">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <a href="/movie/{{ obj.movie_ID }}/details/">
+                                                    {% if obj.poster and obj.poster != "" %}
+                                                        <img src="{{ obj.poster }}"
+                                                             alt="影片海报"
+                                                             class="rank-poster w-100"
+                                                             onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                                    {% else %}
+                                                        <img src="/static/img/wt.jpg"
+                                                             alt="暂无海报"
+                                                             class="rank-poster w-100">
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ obj.name|default:"未知影片" }}</h5>
+                                                    <p class="card-text">导演：{{ obj.director|default:"未知" }}</p>
+                                                    <p class="card-text actor-truncate">主演：{{ obj.actors|default:"未知" }}</p>
+                                                    <p class="card-text">类型：{{ obj.type|default:"未知" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 全局图片加载失败监听 -->
+    <script>
+        document.addEventListener('error', function(e) {
+            const target = e.target;
+            if (target.tagName === 'IMG' && target.src.indexOf('/static/img/wt.jpg') === -1) {
+                target.src = '/static/img/wt.jpg';
+                target.alt = '图片加载失败';
+            }
+        }, true);
+    </script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "front_layout.html" %}
+{% load static %}
+{% block title %}个人中心{% endblock %}
+{% block main-container %}
+    <style>
+        /* 统一卡片布局样式 */
+        .profile-card-container {
+            padding: 10px;
+        }
+        .profile-card {
+            height: 100%;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        .profile-card:hover {
+            transform: translateY(-5px);
+        }
+        /* 统一图片样式 */
+        .profile-img {
+            width: 100%;
+            object-fit: cover;
+        }
+        /* 文字省略处理 */
+        .text-truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* 评论卡片样式 */
+        .comment-card-body {
+            min-height: 120px;
+        }
+    </style>
+
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">个人中心</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>个人中心</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-2" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <!-- 用户信息和留言板 -->
+            <div class="row">
+                <!-- 用户信息卡片 -->
+                <div class="col-lg-6 profile-card-container">
+                    <div class="card profile-card mb-3" style="max-width: 540px;">
+                        {% if queryset_user %}
+                            <div class="row g-0">
+                                <div class="col-md-4">
+                                    <img src="{% static 'assets/images/c1.jpg' %}" alt="用户头像" class="profile-img w-100" style="height: 180px;">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ queryset_user.username }}</h5>
+                                        <p class="card-text">
+                                            春夏秋冬自然,明月清风共我,有春风拂面的温柔,也有美好故事的发生,
+                                            又一个春天如约而至,温柔的朝阳里布谷鸟声声呼唤,愿普天同安暖
+                                        </p>
+                                        <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 留言板卡片 -->
+                <div class="col-lg-6 profile-card-container">
+                    <div class="card profile-card mb-3">
+                        <div class="card-body">
+                            <h2 class="card-title">留言</h2>
+                            <h5 class="card-subtitle mb-3 text-muted">请留下您宝贵的意见</h5>
+                            {% if messages %}
+                                {% for mes in messages %}
+                                    <span class="text-danger">{{ mes.message }}</span>
+                                {% endfor %}
+                            {% endif %}
+                            <form method="get" action="/board/add/">
+                                <div class="form-floating">
+                                    <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea" style="height: 120px;" name="boardMessage" required></textarea>
+                                </div>
+                                <button class="btn btn-primary mt-3" type="submit">提交</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收藏记录 -->
+            <div class="row mt-4">
+                <div class="col-lg-12">
+                    <div class="card mb-3">
+                        <div class="card-header"><h4>收藏记录</h4></div>
+                        {% if queryset_collect %}
+                            <div class="row p-3">
+                                {% for obj in queryset_collect %}
+                                    <div class="col-lg-2 col-md-3 profile-card-container">
+                                        <div class="card profile-card">
+                                            <!-- 关键修改：调整跳转链接为电影详情页路径 -->
+                                            <a href="/movie/{{ obj.movie_information.movie_ID }}/details/">
+                                                {% if obj.movie_information.poster and obj.movie_information.poster != "" %}
+                                                    <img class="card-img-top profile-img" src="{{ obj.movie_information.poster }}" alt="{{ obj.movie_information.name }}" style="height: 180px;">
+                                                {% else %}
+                                                    <img class="card-img-top profile-img" src="/static/img/wt.jpg" alt="暂无海报" style="height: 180px;">
+                                                {% endif %}
+                                            </a>
+                                            <div class="card-body">
+                                                <p class="card-title text-truncate">{{ obj.movie_information.name }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="card-body">
+                                <h4 class="text-center">暂无收藏内容</h4>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 图片加载失败处理 -->
+    <script>
+        document.addEventListener('error', function(e) {
+            const target = e.target;
+            if (target.tagName === 'IMG' && target.src.indexOf('/static/img/wt.jpg') === -1) {
+                target.src = '/static/img/wt.jpg';
+                target.alt = '图片加载失败';
+            }
+        }, true);
+    </script>
+{% endblock %}
+
+

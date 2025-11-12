@@ -1,0 +1,167 @@
+{% extends "front_layout.html" %}
+{% load static %}
+
+{% block title %}搜索结果{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+<link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
+<link rel="stylesheet" href="{% static 'assets/css/style-starter.css' %}">
+<style>
+    .transition-colors {
+        transition: color 0.3s ease;
+    }
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    }
+    .card-img-top {
+        height: 300px;
+        object-fit: cover;
+    }
+    .section-title {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1rem;
+        position: relative;
+    }
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background-color: #e74c3c;
+    }
+    .no-results {
+        text-align: center;
+        padding: 6rem 0;
+        color: #666;
+    }
+    .no-results i {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        color: #ccc;
+    }
+    .search-results-section {
+        padding: 4rem 0;
+    }
+
+    /* 新增样式：让inner-banner内容完全居中 */
+    .inner-banner {
+        min-height: 300px; /* 保证有足够高度 */
+        display: flex;
+        align-items: center; /* 垂直居中 */
+        justify-content: center; /* 水平居中 */
+        text-align: center; /* 文本居中 */
+    }
+    .W3l-breadcrumb {
+        width: 100%; /* 让内容占满容器宽度 */
+    }
+    .inner-txt {
+        color: #ffffff !important; /* 强制设置标题颜色与链接一致 */
+        margin-bottom: 1rem; /* 增加与面包屑的间距 */
+    }
+    .breadcrumbs-custom-path {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+    .breadcrumbs-custom-path li {
+        display: inline-block;
+        color: #ffffff; /* 设置当前页文字颜色 */
+    }
+    .breadcrumbs-custom-path li a {
+        color: #ffffff;
+        text-decoration: none;
+    }
+    .breadcrumbs-custom-path li a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'assets/js/jquery-3.3.1.min.js' %}"></script>
+<script src="{% static 'assets/js/bootstrap.min.js' %}"></script>
+{% endblock %}
+
+{% block main-container %}
+    <section class="inner-banner py-5 bg-dark text-white">
+        <div class="W3l-breadcrumb py-lg-5">
+            <div class="container">
+                <h4 class="inner-txt tittle font-weight-bold">搜索结果</h4>
+                <ol class="breadcrumbs-custom-path">
+                    <li><a href="/front_index">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>搜索结果</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section class="search-results-section">
+        <div class="container">
+            <h5 class="sub-title section-title">搜索结果：“{{ keyword }}”</h5>
+
+            {% if movies %}
+                <div class="row">
+                    {% for movie in movies %}
+                        <div class="col-lg-3 col-md-4 col-sm-6 item mb-4">
+                            <div class="card">
+                                <a href="/movie/{{ movie.movie_ID }}/details/">
+                                    <img class="card-img-top" src="{{ movie.poster }}" alt="{{ movie.name }}海报">
+                                </a>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ movie.name }}</h5>
+                                    <p class="card-text text-muted small">导演：{{ movie.director }}</p>
+                                    <a href="/movie/{{ movie.movie_ID }}/details/" class="btn btn-primary btn-sm">查看详情</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-results">
+                    <i class="fa fa-film" aria-hidden="true"></i>
+                    <p>暂无匹配结果，请尝试其他关键词。</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light py-4">
+        <div class="container">
+            <div class="row justify-content-between align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-film text-danger mr-2" style="font-size: 1.2em;"></i>
+                        <span>© 2025 推荐电影</span>
+                    </div>
+                    <p class="mt-2 text-muted small">专注于为您推荐优质电影，发现光影魅力</p>
+                </div>
+                <div class="col-md-4 text-md-right">
+                    <div class="d-flex justify-content-end gap-3">
+                        <a href="#" class="text-light hover:text-danger transition-colors">
+                            <i class="fa fa-weibo" style="font-size: 1.2em;"></i>
+                        </a>
+                        <a href="#" class="text-light hover:text-danger transition-colors">
+                            <i class="fa fa-wechat" style="font-size: 1.2em;"></i>
+                        </a>
+                        <a href="#" class="text-light hover:text-danger transition-colors">
+                            <i class="fa fa-instagram" style="font-size: 1.2em;"></i>
+                        </a>
+                    </div>
+                    <p class="mt-2 text-muted small">联系我们：movie@example.com</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+{% endblock %}

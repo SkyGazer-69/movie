@@ -1,0 +1,326 @@
+{% extends "admin_layout.html" %}
+{% load static %}
+
+{% block title %}影片管理{% endblock %}
+
+{% block css %}
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .btn-action {
+        transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+        transform: scale(1.05);
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(59, 113, 202, 0.25);
+        border-color: var(--primary);
+    }
+    .search-bar {
+        margin-bottom: 1.5rem;
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-body .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .modal-body label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .error-msg {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block main-container %}
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card rounded shadow h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 font-weight-bold">影片管理</h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- 搜索和新增区域 -->
+                    <div class="search-bar d-flex flex-wrap align-items-center justify-content-between">
+                        <form class="d-flex flex-1 flex-sm-auto me-3" method="get">
+                            <input class="form-control me-2" name="search" type="search"
+                                   placeholder="模糊搜索（根据影片名）" aria-label="Search"
+                                   value="{{ request.GET.search|default:'' }}">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fa fa-search me-1"></i>
+                            </button>
+                        </form>
+                        <button class="btn btn-success" type="button" id="btnAdd">
+                            <i class="bi bi-plus-circle me-1"></i> 新建影片
+                        </button>
+                    </div>
+
+                    <!-- 表格区域 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" style="width: 10%;">影片ID</th>
+                                    <th scope="col" style="width: 15%;">影片名</th>
+                                    <th scope="col" style="width: 15%;">海报</th>
+                                    <th scope="col" style="width: 15%;">导演</th>
+                                    <th scope="col" style="width: 20%;">类型</th>
+                                    <th scope="col" style="width: 25%;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for obj in queryset %}
+                                    <tr>
+                                        <td>{{ obj.movie_ID }}</td>
+                                        <td class="text-start">{{ obj.name }}</td>
+                                        <td>
+                                            <img src="{{ obj.poster }}" class="rounded"
+                                                 style="height: 80px; width: auto; max-width: 100%;"
+                                                 alt="{{ obj.name }}海报">
+                                        </td>
+                                        <td>{{ obj.director }}</td>
+                                        <td>{{ obj.type }}</td>
+                                        <td>
+                                            <button id="{{ obj.movie_ID }}"
+                                                    type="button" class="btn btn-outline-primary btn-sm btn-edit btn-action me-2">
+                                                <i class="fa fa-edit me-1"></i> 编辑
+                                            </button>
+                                            <button id="{{ obj.movie_ID }}"
+                                                    type="button" class="btn btn-outline-danger btn-sm btn-delete btn-action">
+                                                <i class="fa fa-trash me-1"></i> 删除
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="py-4 text-muted">
+                                            <i class="fa fa-film me-2"></i> 暂无影片数据
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页区域 -->
+                    {% if queryset %}
+                        <div class="text-center mt-4">
+                            <ul class="pagination justify-content-center">
+                                {{ page_string }}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建/编辑模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content rounded shadow">
+                <div class="modal-header bg-light">
+                    <h4 class="modal-title" id="myModalLabel">新建影片</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAdd" class="row g-3">
+                        {% for field in form %}
+                            <div class="form-group col-md-12" style="position: relative;">
+                                <label for="id_{{ field.name }}">{{ field.label }}</label>
+                                {{ field }}
+                                <span class="error-msg" style="color: red;position: absolute;"></span>
+                            </div>
+                        {% endfor %}
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                    <button id="btnSave" type="button" class="btn btn-success">确认保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content rounded shadow">
+                <div class="modal-header bg-light">
+                    <h4 class="modal-title" id="deleteModalLabel">确认删除</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center py-3">
+                        <i class="fa fa-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                        <h5 class="mt-3 mb-2">是否确定删除该影片？</h5>
+                        <p class="text-muted small">删除后，所有关联的相关数据都会被删除，且无法恢复。</p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                    <button id="btnConfirmDelete" type="button" class="btn btn-danger">确定删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    var DELETE_ID;
+    var EDIT_ID;
+
+    $(function () {
+        bindBtnAddEvent();
+        bindBtnSaveEvent();
+        bindBtnDeleteEvent();
+        bindBtnConfirmDeleteEvent();
+        bindBtnEditEvent();
+    });
+
+    // 绑定“新建”按钮事件
+    function bindBtnAddEvent() {
+        $("#btnAdd").click(function () {
+            EDIT_ID = undefined;
+            $("#formAdd")[0].reset();
+            $(".error-msg").empty();
+            $("#myModalLabel").text("新建影片");
+            $("#myModal").modal('show');
+        });
+    }
+
+    // 绑定“保存”按钮事件
+    function bindBtnSaveEvent() {
+        $("#btnSave").click(function () {
+            $(".error-msg").empty();
+            if (EDIT_ID) {
+                doEdit();
+            } else {
+                doAdd();
+            }
+        });
+    }
+
+    // 编辑请求
+    function doEdit() {
+        $.ajax({
+            url: "/movie/edit/?uid=" + EDIT_ID,
+            type: "post",
+            data: $("#formAdd").serialize(),
+            dataType: "JSON",
+            success: function (res) {
+                if (res.status) {
+                    $("#formAdd")[0].reset();
+                    $("#myModal").modal('hide');
+                    location.reload();
+                } else {
+                    if (res.tips) {
+                        alert(res.tips);
+                    } else {
+                        $.each(res.error, function (name, errorList) {
+                            $("#id_" + name).next().text(errorList[0]);
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    // 添加请求
+    function doAdd() {
+        $.ajax({
+            url: "/movie/add/",
+            type: "post",
+            data: $("#formAdd").serialize(),
+            dataType: "JSON",
+            success: function (res) {
+                if (res.status) {
+                    $("#formAdd")[0].reset();
+                    $("#myModal").modal('hide');
+                    location.reload();
+                } else {
+                    $.each(res.error, function (name, errorList) {
+                        $("#id_" + name).next().text(errorList[0]);
+                    });
+                }
+            }
+        });
+    }
+
+    // 绑定“删除”按钮事件
+    function bindBtnDeleteEvent() {
+        $(".btn-delete").click(function () {
+            DELETE_ID = $(this).attr("id");
+            $("#deleteModal").modal('show');
+        });
+    }
+
+    // 绑定“确认删除”按钮事件
+    function bindBtnConfirmDeleteEvent() {
+        $("#btnConfirmDelete").click(function () {
+            $.ajax({
+                url: "/movie/delete/",
+                type: "GET",
+                data: {
+                    uid: DELETE_ID
+                },
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        $("#deleteModal").modal('hide');
+                        location.reload();
+                    } else {
+                        alert(res.error);
+                    }
+                }
+            });
+        });
+    }
+
+    // 绑定“编辑”按钮事件
+    function bindBtnEditEvent() {
+        $(".btn-edit").click(function () {
+            $("#formAdd")[0].reset();
+            $(".error-msg").empty();
+            var uid = $(this).attr("id");
+            EDIT_ID = uid;
+
+            // 请求影片详情数据
+            $.ajax({
+                url: "/movie/detail/",
+                type: "get",
+                data: {
+                    uid: uid
+                },
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        // 填充表单数据
+                        $.each(res.data, function (name, value) {
+                            $("#id_" + name).val(value);
+                        });
+                        $("#myModalLabel").text("编辑影片");
+                        $("#myModal").modal('show');
+                    } else {
+                        alert(res.error);
+                    }
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

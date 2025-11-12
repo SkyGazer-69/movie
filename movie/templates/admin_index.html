@@ -1,0 +1,72 @@
+{% extends 'admin_layout.html' %}
+
+{% block title %}首页{% endblock %}
+
+{% block main-container %}
+    <div class="container-fluid pt-4 px-4">
+        <div class="row g-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card rounded p-4 shadow">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <i class="fa fa-film fa-3x text-primary"></i>
+                        <div class="ms-3">
+                            <p class="mb-2 text-muted">影片总数</p>
+                            <h6 class="mb-0 font-weight-bold">{{ movie_num }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card rounded p-4 shadow">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <i class="fa fa-comments fa-3x text-primary"></i>
+                        <div class="ms-3">
+                            <p class="mb-2 text-muted">留言总数</p>
+                            <h6 class="mb-0 font-weight-bold">{{ board_num }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card rounded p-4 shadow">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <i class="fa fa-users fa-3x text-primary"></i>
+                        <div class="ms-3">
+                            <p class="mb-2 text-muted">总用户数</p>
+                            <h6 class="mb-0 font-weight-bold">{{ user_num }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card rounded p-4 shadow">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <i class="fa fa-star fa-3x text-primary"></i>
+                        <div class="ms-3">
+                            <p class="mb-2 text-muted">评价总数</p>
+                            <h6 class="mb-0 font-weight-bold">{{ comment_num }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Chart Start -->
+    <div class="container-fluid pt-4 px-4">
+        <div class="card rounded shadow">
+            <div class="card-body">
+                <img src="/static/assets/images/img.png" class="img-fluid rounded" alt="统计图表">
+            </div>
+        </div>
+    </div>
+    <!-- Sales Chart End -->
+
+    <!-- Widgets Start -->
+    <div class="container-fluid pt-4 px-4">
+        <div class="row g-4">
+            <!-- 可根据需求添加其他小部件 -->
+        </div>
+    </div>
+    <!-- Widgets End -->
+{% endblock %}

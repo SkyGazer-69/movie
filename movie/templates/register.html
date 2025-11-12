@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影推荐系统-注册</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            background-color: #f8fafb;
+            color: #6c757d;
+        }
+
+        .shell {
+            position: relative;
+            width: 1000px;
+            min-width: 1000px;
+            min-height: 600px;
+            height: 600px;
+            padding: 25px;
+            background-color: #f8fafb;
+            box-shadow: 10px 10px 20px #e1e5e8, -10px -10px 20px #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1200px) {
+            .shell {
+                transform: scale(0.7);
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .shell {
+                transform: scale(0.6);
+            }
+        }
+
+        @media (max-width: 800px) {
+            .shell {
+                transform: scale(0.5);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .shell {
+                transform: scale(0.4);
+            }
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            width: 600px;
+            height: 100%;
+            padding: 25px;
+            background-color: #f8fafb;
+            transition: 1.25s;
+        }
+
+        .form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        .iconfont {
+            margin: 0 5px;
+            border: rgba(108, 117, 125, 0.3) 2px solid;
+            border-radius: 50%;
+            font-size: 25px;
+            padding: 3px;
+            opacity: 0.6;
+            transition: 0.1s;
+        }
+
+        .iconfont:hover {
+            opacity: 1;
+            transition: 0.15s;
+            cursor: pointer;
+        }
+
+        .form_input {
+            width: 350px;
+            height: 40px;
+            margin: 4px 0;
+            padding-left: 25px;
+            font-size: 13px;
+            letter-spacing: 0.15px;
+            border: none;
+            outline: none;
+            background-color: #f8fafb;
+            transition: 0.25s ease;
+            border-radius: 8px;
+            box-shadow: inset 2px 2px 4px #e1e5e8, inset -2px -2px 4px #ffffff;
+        }
+
+        .form_input:focus {
+            box-shadow: inset 4px 4px 4px #e1e5e8, inset -4px -4px 4px #ffffff;
+        }
+
+        .form_span {
+            margin-top: 30px;
+            margin-bottom: 12px;
+        }
+
+        .form_link {
+            color: #3498db;
+            font-size: 15px;
+            margin-top: 25px;
+            border-bottom: 1px solid #b8c1cc;
+            line-height: 2;
+        }
+
+        .title {
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 3;
+            color: #34495e;
+            letter-spacing: 10px;
+        }
+
+        .description {
+            font-size: 14px;
+            letter-spacing: 0.25px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .button {
+            width: 180px;
+            height: 50px;
+            border-radius: 25px;
+            margin-top: 50px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 1.15px;
+            background-color: #64b5f6;
+            color: #ffffff;
+            box-shadow: 8px 8px 16px #e1e5e8, -8px -8px 16px #ffffff;
+            border: none;
+            outline: none;
+        }
+
+        .a-container {
+            z-index: 100;
+            left: calc(100% - 600px);
+        }
+
+        .b-container {
+            left: calc(100% - 600px);
+            z-index: 0;
+        }
+
+        .switch {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 400px;
+            padding: 50px;
+            z-index: 200;
+            transition: 1.25s;
+            background-color: #f8fafb;
+            overflow: hidden;
+            box-shadow: 4px 4px 10px #e1e5e8, -4px -4px 10px #ffffff;
+        }
+
+        .switch_circle {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background-color: #f8fafb;
+            box-shadow: inset 8px 8px 12px #d9e1e7, inset -8px -8px 12px #ffffff;
+            bottom: -60%;
+            left: -60%;
+            transition: 1.25s;
+        }
+
+        .switch_circle-t {
+            top: -30%;
+            left: 60%;
+            width: 300px;
+            height: 300px;
+        }
+
+        .switch_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            position: absolute;
+            width: 400px;
+            padding: 50px 55px;
+            transition: 1.25s;
+        }
+
+        .switch_button {
+            cursor: pointer;
+        }
+
+        .switch_button:hover,
+        .submit:hover {
+            box-shadow: 6px 6px 10px #e1e5e8, -6px -6px 10px #ffffff;
+            transform: scale(0.985);
+            transition: 0.25s;
+        }
+
+        .switch_button:active,
+        .switch_button:focus {
+            box-shadow: 2px 2px 6px #e1e5e8, -2px -2px 6px #ffffff;
+            transform: scale(0.97);
+            transition: 0.25s;
+        }
+
+        .is-txr {
+            left: calc(100% - 400px);
+            transition: 1.25s;
+            transform-origin: left;
+        }
+
+        .is-txl {
+            left: 0;
+            transition: 1.25s;
+            transform-origin: right;
+        }
+
+        .is-z {
+            z-index: 200;
+            transition: 1.25s;
+        }
+
+        .is-hidden {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            transition: 1.25s;
+        }
+
+        .is-gx {
+            animation: is-gx 1.25s;
+        }
+
+        @keyframes is-gx {
+            0%, 10%, 100% { width: 400px; }
+            30%, 50% { width: 500px; }
+        }
+
+
+        .red {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="shell">
+        <div class="container a-container" id="a-container">
+            <form action="" method="post" class="form" id="a-form">
+                {% csrf_token %}
+                <h2 class="form_title title">创建账号</h2>
+                <input type="text" class="form_input" placeholder="账号" name="username" id="name" onblur="nameCheck()">
+                <span class="name">6~18位由数字和英文字母组成的账户名</span>
+                <input type="password" class="form_input" placeholder="密码" name="password1" id="pwd" onblur="pwdCheck()">
+                <span class="pwd">请输入6-18位密码</span>
+                <input type="password" class="form_input" placeholder="重复密码" name="password2" id="pwd1" onblur="pwdSure()">
+                <span class="pwd1">请再次输入密码</span>
+                <input type="text" class="form_input" placeholder="邮箱" name="email" id="email" onblur="emailCheck()">
+                <span class="email">ex:114514@qq.com</span>
+                <script>
+                {% if messages %}
+                    {% for meg in messages %}
+                        alert('{{ meg.message }}');
+                    {% endfor %}
+                {% endif %}
+                </script>
+                <button class="form_button button" onclick="sub()" type="submit">注册</button>
+            </form>
+        </div>
+
+        <div class="switch" id="switch-cnt">
+            <div class="switch_circle"></div>
+            <div class="switch_circle switch_circle-t"></div>
+            <div class="switch_container" id="switch-c1">
+                <h2 class="switch_title title" style="letter-spacing: 0;">欢迎回来！</h2>
+                <p class="switch_description description">已经有账号了嘛，去登入账号来进入电影世界吧！！！</p>
+                <button class="switch_button button switch-btn"><a href="/login/" style="color: white; text-decoration: none;">登录</a></button>
+            </div>
+        </div>
+    </div>
+{#    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>#}
+{#    <script>#}
+{#        function sub() {#}
+{#            if(nameCheck() && emailCheck() && pwdCheck() && pwdSure()){#}
+{#                alert('提交成功');#}
+{#            }else{#}
+{#                alert('你的输入有误，请按要求输入后再提交');#}
+{#            }#}
+{#        }#}
+{#        function nameCheck() {#}
+{#            let reg = /^((?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,18}|)$/;#}
+{#            let name = $("#name").val();#}
+{#            if (!reg.test(name) || name=='') {#}
+{#                $(".name").html("<span class='red'>请输入6~18位由数字和英文字母组成的账户名</span>");#}
+{#                return false;#}
+{#            }else{#}
+{#                $(".name").text('√');#}
+{#                return true;#}
+{#            }#}
+{#        }#}
+{#        function emailCheck(str) {#}
+{#            let reg = /^\w{3,12}@\w{1,5}\.[a-z]{2,3}$/;#}
+{#            let email = $("#email").val();#}
+{#            if(!reg.test(email) || email==''){#}
+{#                $(".email").html("<span class='red'>请输入正确的邮箱</span>")#}
+{#                return false;#}
+{#            }else{#}
+{#                $(".email").text('√');#}
+{#                return true;#}
+{#            }#}
+{#        }#}
+{#        function pwdCheck(str) {#}
+{#            let reg = /^[\s\S]{6,18}/;#}
+{#            let pwd = $("#pwd").val();#}
+{#            if(!reg.test(pwd) || pwd==''){#}
+{#                $(".pwd").html("<span class='red'>请输入6-12位密码</span>")#}
+{#                return false;#}
+{#            }else{#}
+{#                $(".pwd").text('√');#}
+{#                return true;#}
+{#            }#}
+{#        }#}
+{#        function pwdSure() {#}
+{#            if ($("#pwd").val() === $("#pwd1").val()) {#}
+{#                $(".pwd").text('√');#}
+{#                return true;#}
+{#            } else {#}
+{#                $(".pwd1").html("<span class='red'>两次密码输入不一致</span>")#}
+{#                return false;#}
+{#            }#}
+{#        }#}
+{#    </script>#}
+</body>
+
+</html>

@@ -1,0 +1,166 @@
+{% extends "front_layout.html" %}
+{% load static %}
+
+{% block title %}影片库{% endblock %}
+
+{% block main-container %}
+    <style>
+        /* 筛选按钮样式优化 */
+        .filter-btn {
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+            margin: 0 8px 8px 0;
+            transition: all 0.3s ease;
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+        .filter-btn.active {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .filter-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* 影片卡片样式优化 */
+        .movie-card {
+            border: 1px solid #eee;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .movie-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+        .movie-card .card-body {
+            padding: 10px;
+            text-align: center;
+        }
+        .movie-card .card-title {
+            font-size: 14px;
+            margin-bottom: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+
+    <section class="inner-banner py-5">
+        <div class="w3l-breadcrumb py-lg-5">
+            <div class="container pt-5 pb-sm-4 pb-2">
+                <h4 class="inner-text-title font-weight-bold pt-5">影片库</h4>
+                <ul class="breadcrumbs-custom-path">
+                    <li><a href="/front_index/">首页</a></li>
+                    <li class="active"><i class="fas fa-angle-right mx-2"></i>影片库</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="w3l-courses py-5" id="courses">
+        <div class="container pb-lg-5 pb-md-4 pb-2">
+            <!-- 筛选区域 -->
+            <div class="mb-4">
+                <!-- 类型筛选 -->
+                <div class="d-flex flex-wrap mb-3">
+                    <a href="/depot-0-{{ kwargs.depot_region_ID }}-{{ kwargs.depot_time_ID }}"
+                       class="filter-btn {% if kwargs.depot_type_ID == '0' %}active{% endif %}">
+                        全部
+                    </a>
+                    {% for item in type_list %}
+                        <a href="/depot-{{ item.ID }}-{{ kwargs.depot_region_ID }}-{{ kwargs.depot_time_ID }}"
+                           class="filter-btn {% if item.ID == kwargs.depot_type_ID %}active{% endif %}">
+                            {{ item.type }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <!-- 地区筛选 -->
+                <div class="d-flex flex-wrap mb-3">
+                    <a href="/depot-{{ kwargs.depot_type_ID }}-0-{{ kwargs.depot_time_ID }}"
+                       class="filter-btn {% if kwargs.depot_region_ID == '0' %}active{% endif %}">
+                        全部
+                    </a>
+                    {% for item in region_list %}
+                        <a href="/depot-{{ kwargs.depot_type_ID }}-{{ item.ID }}-{{ kwargs.depot_time_ID }}"
+                           class="filter-btn {% if item.ID == kwargs.depot_region_ID %}active{% endif %}">
+                            {{ item.region }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <!-- 时间筛选 -->
+                <div class="d-flex flex-wrap mb-3">
+                    <a href="/depot-{{ kwargs.depot_type_ID }}-{{ kwargs.depot_region_ID }}-0"
+                       class="filter-btn {% if kwargs.depot_time_ID == '0' %}active{% endif %}">
+                        全部
+                    </a>
+                    {% for item in time_list %}
+                        <a href="/depot-{{ kwargs.depot_type_ID }}-{{ kwargs.depot_region_ID }}-{{ item.ID }}"
+                           class="filter-btn {% if item.ID == kwargs.depot_time_ID %}active{% endif %}">
+                            {{ item.time }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 筛选条件展示 -->
+            <div class="mb-4">
+                <h4 class="text-center">您现在筛选的因素为：类型：{{ type_name }}
+                    出品地区：{{ region_name }} 出品年份：{{ time_name }}</h4>
+            </div>
+
+            <!-- 影片列表 -->
+            <div class="row">
+                {% for obj in queryset %}
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="movie-card">
+                            <a href="/movie/{{ obj.movie_ID }}/details/">
+                                {% if obj.poster and obj.poster != "" %}
+                                    <!-- 初始图片，加载失败时触发替换 -->
+                                    <img class="card-img-top"
+                                         src="{{ obj.poster }}"
+                                         alt="影片海报"
+                                         onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                {% else %}
+                                    <!-- 无海报时直接使用缺省图 -->
+                                    <img class="card-img-top"
+                                         src="/static/img/wt.jpg"
+                                         alt="暂无海报">
+                                {% endif %}
+                            </a>
+                            <div class="card-body">
+                                <p class="card-title">{% if obj.name %}{{ obj.name }}{% else %}未知影片{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <p>暂无符合条件的影片</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('error', function(e) {
+            const target = e.target;
+            if (target.tagName === 'IMG' && target.src.indexOf('/static/img/wt.jpg') === -1) {
+                target.src = '/static/img/wt.jpg';
+                target.alt = '图片加载失败';
+            }
+        }, true);
+    </script>
+{% endblock %}
