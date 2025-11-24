@@ -14,6 +14,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 # 新增导入（用于装饰器）
 from functools import wraps
+from .models import Movie, Board, UserInfo, Comment #修改
 
 
 def superuser_required(view_func):
@@ -412,16 +413,27 @@ def board_add(request):
 @superuser_required
 def admin_index(request):
     time = datetime.now()
-    movie_num = Movie.objects.count()  # 统计电影总数
-    board_num = Board.objects.count()  # 统计留言总数
-    user_num = UserInfo.objects.count()  # 统计用户总数
+    movie_num = Movie.objects.values('movie_ID', 'name').distinct().count()
+    board_num = Board.objects.count()
+    user_num = UserInfo.objects.count()
     comment_num = Comment.objects.count()
-    # print(comment_num)  # 打印评论总数到控制台
+
+    score_distribution = []
+    for i in range(10):
+        start = i
+        end = i + 1
+        count = Movie.objects.filter(
+            movie_score__gte=start,
+            movie_score__lt=end
+        ).count()
+        score_distribution.append(count)
+
     context = {
-        "movie_num": movie_num -545,
+        "movie_num": movie_num,
         "board_num": board_num,
         "user_num": user_num,
         "comment_num": comment_num,
+        "score_distribution": score_distribution,
     }
     return render(request, 'admin_index.html', context)
 

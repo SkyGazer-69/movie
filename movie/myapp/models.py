@@ -95,7 +95,7 @@ class Rec(models.Model):
 
 class Board(models.Model):
     board_ID = models.CharField(max_length=32, unique=True, verbose_name="留言ID")
-    board_time = models.DateTimeField(auto_now_add=True, verbose_name="留言时间")  # 添加auto_now_add=True
+    board_time = models.DateTimeField(auto_now_add=True, verbose_name="留言时间")
     board_message = models.CharField(max_length=256, verbose_name="留言内容")
     board_user = models.CharField(max_length=255, verbose_name="留言用户")
 

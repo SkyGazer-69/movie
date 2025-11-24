@@ -2,6 +2,10 @@
 
 {% block title %}首页{% endblock %}
 
+{% block extra_css %}
+    {# 这里如果有额外的CSS可以引入，否则留空 #}
+{% endblock %}
+
 {% block main-container %}
     <div class="container-fluid pt-4 px-4">
         <div class="row g-4">
@@ -51,17 +55,57 @@
             </div>
         </div>
     </div>
+
+    <!-- 评分分布图区域 -->
     <div class="container-fluid pt-4 px-4">
         <div class="card rounded shadow">
+            <div class="card-header">
+                <h5 class="mb-0">电影评分分布</h5>
+            </div>
             <div class="card-body">
-                <img src="/static/assets/images/img.png" class="img-fluid rounded" alt="统计图表">
+                <div id="score-chart" style="width: 100%; height: 400px;"></div>
+                <!-- 调试数据：快速确认后端数据是否正常 -->
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    数据预览：{{ score_distribution|safe }}
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid pt-4 px-4">
-        <div class="row g-4">
+    {% block extra_js %}
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof echarts === 'undefined') {
+                alert('ECharts 加载失败');
+                return;
+            }
 
-        </div>
-    </div>
+            var myChart = echarts.init(document.getElementById('score-chart'));
+            var scoreData = {{ score_distribution|safe }};
+
+            var option = {
+                title: { text: '电影评分分布', left: 'center' },
+                tooltip: { trigger: 'axis', formatter: '{b}分：{c}部电影' },
+                grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: ['0-1', '1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10']
+                },
+                yAxis: { type: 'value', name: '电影数量', min: 0 },
+                series: [{
+                    type: 'bar',
+                    data: scoreData,
+                    itemStyle: { color: '#409EFF' },
+                    label: { show: true, position: 'top' }
+                }]
+            };
+
+            myChart.setOption(option);
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        });
+    </script>
+    {% endblock %}
 {% endblock %}
