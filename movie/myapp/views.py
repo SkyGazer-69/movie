@@ -418,7 +418,7 @@ def admin_index(request):
     comment_num = Comment.objects.count()
     # print(comment_num)  # 打印评论总数到控制台
     context = {
-        "movie_num": movie_num,
+        "movie_num": movie_num -545,
         "board_num": board_num,
         "user_num": user_num,
         "comment_num": comment_num,
