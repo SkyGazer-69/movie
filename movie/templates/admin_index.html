@@ -1,9 +1,6 @@
 {% extends 'admin_layout.html' %}
-
 {% block title %}首页{% endblock %}
-
 {% block extra_css %}
-    {# 这里如果有额外的CSS可以引入，否则留空 #}
 {% endblock %}
 
 {% block main-container %}
@@ -64,16 +61,12 @@
             </div>
             <div class="card-body">
                 <div id="score-chart" style="width: 100%; height: 400px;"></div>
-                <!-- 调试数据：快速确认后端数据是否正常 -->
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                    数据预览：{{ score_distribution|safe }}
-                </div>
             </div>
         </div>
     </div>
 
     {% block extra_js %}
-    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="/static/echarts/echarts.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof echarts === 'undefined') {

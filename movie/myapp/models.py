@@ -59,7 +59,6 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     sex_choice = (
         (1, "男"),
         (2, "女"),
-        (3, "未知")
     )
     sex = models.IntegerField(choices=sex_choice, null=False, verbose_name="性别", default=1)
     age = models.IntegerField(verbose_name="年龄", null=True)
