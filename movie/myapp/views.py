@@ -12,6 +12,26 @@ from django.core.exceptions import ValidationError
 from myapp.pagination import Pagination
 import json
 from django.views.decorators.csrf import csrf_exempt
+# 新增导入（用于装饰器）
+from functools import wraps
+
+
+def superuser_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        # 1. 未登录用户：跳转到登录页，记录原访问地址（登录后可跳转回来）
+        if not request.user.is_authenticated:
+            return redirect(f'/login/?next={request.path}')
+
+        # 2. 已登录但非超级用户：跳普通首页+提示无权限
+        if not request.user.is_superuser:
+            messages.error(request, '无权限访问管理员页面！')
+            return redirect('/front_index/')
+
+        # 3. 超级用户：正常执行原视图
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped_view
 
 
 class LoginForm(forms.Form):
@@ -46,7 +66,12 @@ def login_user(request):
             if user:
                 login(request, user)
                 request.session.set_expiry(None)
-                return redirect('/front_index')
+                # 处理next参数：超级用户跳原目标，普通用户跳普通首页
+                next_url = request.GET.get('next', '')
+                if user.is_superuser and next_url.startswith('/'):
+                    return redirect(next_url)
+                else:
+                    return redirect('/front_index/')
             else:
                 messages.error(request, '用户不存在或密码错误!')
                 return redirect('/login/')
@@ -70,7 +95,7 @@ class RegisterForm(forms.Form):
         error_messages={
             "required": "密码不能为空!",
             "min_length": "密码不能低于3个字!",
-             "max_length": "密码不能多于18个字!"
+            "max_length": "密码不能多于18个字!"
         }
     )
     password2 = forms.CharField(required=False)
@@ -90,25 +115,25 @@ class RegisterForm(forms.Form):
 
 def register(request):
     if request.method == "GET":
-        return render(request,"register.html")
+        return render(request, "register.html")
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data["username"]
             password = form.cleaned_data["password1"]
             email = form.cleaned_data["email"]
-            username_exists = UserInfo.objects.filter(username = username).exists()
+            username_exists = UserInfo.objects.filter(username=username).exists()
             if username_exists:
-                messages.error(request,'你输入的用户名已存在!')
+                messages.error(request, '你输入的用户名已存在!')
                 return HttpResponseRedirect('/register/')
-            email_exists = UserInfo.objects.filter(email = email).exists()
+            email_exists = UserInfo.objects.filter(email=email).exists()
             if email_exists:
-                messages.error(request,'你输入的邮箱已经被注册了!')
+                messages.error(request, '你输入的邮箱已经被注册了!')
                 return HttpResponseRedirect('/register/')
-            user_ID = datetime.now().strftime("%Y%m%d%H%M%S") + str(random.randint(1000,9999))
-            UserInfo.objects.create_user(username = username,password = password,email = email,user_ID = user_ID)
-            messages.success(request,'注册成功,请登入!')
-            return  HttpResponseRedirect('/login/')
+            user_ID = datetime.now().strftime("%Y%m%d%H%M%S") + str(random.randint(1000, 9999))
+            UserInfo.objects.create_user(username=username, password=password, email=email, user_ID=user_ID)
+            messages.success(request, '注册成功,请登入!')
+            return HttpResponseRedirect('/login/')
         else:
             return render(request, 'register.html', {'form': form})
 
@@ -117,10 +142,11 @@ def logout_user(request):
     logout(request)
     return redirect('/front_index/')
 
+
 def index(request):
     queryset_hot = Movie.objects.order_by('-moive_time')[:8]
     queryset_high = Movie.objects.order_by('-moive_time')[:8]
-    return render(request,'front_index.html',{"queryset_hot":queryset_hot,"queryset_high":queryset_high})
+    return render(request, 'front_index.html', {"queryset_hot": queryset_hot, "queryset_high": queryset_high})
 
 
 def front_index(request):
@@ -296,7 +322,7 @@ def collect(request):
     list_movie = Movie.objects.get(name=collect_movie)
     if queryset_collect.filter(collect_movie=collect_movie).exists():
         queryset_collect.filter(collect_movie=collect_movie).delete()  # 取消收藏
-        return JsonResponse({"status": "uncollect", "message": "取消收藏成功"})
+        return JsonResponse({"status": "uncollect", "message": "取消收藏"})
     else:
         file_list = {
             'collect_movie': collect_movie,
@@ -383,6 +409,7 @@ def board_add(request):
         return HttpResponseRedirect('/center/')
 
 
+@superuser_required
 def admin_index(request):
     time = datetime.now()
     movie_num = Movie.objects.count()  # 统计电影总数
@@ -413,6 +440,7 @@ class MovieModelForm(forms.ModelForm):
 
 
 # 电影管理页面视图：展示电影列表、搜索、分页
+@superuser_required
 def movie(request):
     data_dict = {}
     # 获取搜索关键词（默认空字符串）
@@ -437,6 +465,7 @@ def movie(request):
 
 
 # 电影添加接口（排除CSRF校验）
+@superuser_required
 @csrf_exempt
 def movie_add(request):
     # 用POST数据初始化表单
@@ -451,6 +480,7 @@ def movie_add(request):
 
 
 # 电影删除接口
+@superuser_required  # 新增装饰器
 def movie_delete(request):
     uid = request.GET.get('uid')  # 获取要删除的电影ID
     # 检查电影是否存在
@@ -464,6 +494,7 @@ def movie_delete(request):
 
 
 # 电影详情接口：获取单部电影的详细信息
+@superuser_required  # 新增装饰器
 def movie_detail(request):
     uid = request.GET.get("uid")  # 获取电影ID
     # 查询对应的电影对象（取第一个）
@@ -491,6 +522,7 @@ def movie_detail(request):
 
 
 # 电影编辑接口（排除CSRF校验）
+@superuser_required  # 新增装饰器
 @csrf_exempt
 def movie_edit(request):
     uid = request.GET.get("uid")  # 获取要编辑的电影ID
@@ -523,6 +555,7 @@ class UserModelForm(forms.ModelForm):
 
 
 # 用户管理页面视图：展示用户列表、搜索、分页
+@superuser_required  # 新增装饰器
 def users(request):
     data_dict = {}
     # 获取搜索关键词（默认空字符串）
@@ -547,6 +580,7 @@ def users(request):
 
 
 # 用户删除接口
+@superuser_required  # 新增装饰器
 def users_delete(request):
     uid = request.GET.get('uid')  # 获取要删除的用户ID
     # 检查用户是否存在
@@ -560,6 +594,7 @@ def users_delete(request):
 
 
 # 用户密码重置接口
+@superuser_required  # 新增装饰器
 def users_reset(request):
     uid = request.GET.get('uid')  # 获取要重置密码的用户ID
     # 检查用户是否存在
@@ -595,6 +630,3 @@ def search_result(request):
         return render(request, "search_result.html", {"movies": []})
     movies = Movie.objects.filter(name__icontains=keyword)
     return render(request, "search_result.html", {"movies": movies, "keyword": keyword})
-
-
-

@@ -51,6 +51,7 @@ class UserManager(BaseUserManager):
 
 
 class UserInfo(AbstractBaseUser, PermissionsMixin):
+    is_superuser = models.BooleanField(default=False, verbose_name="是否为超级用户")
     user_ID = models.CharField(max_length=32, null=False, verbose_name="用户ID")
     username = models.CharField(max_length=255, null=False, verbose_name="用户名", unique=True)
     password = models.CharField(max_length=255, null=False, verbose_name="用户密码")
