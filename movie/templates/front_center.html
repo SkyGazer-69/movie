@@ -12,9 +12,12 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             transition: transform 0.3s ease;
+            border-radius: 8px;
+            overflow: hidden;
         }
         .profile-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
         /* 统一图片样式 */
         .profile-img {
@@ -30,6 +33,87 @@
         /* 评论卡片样式 */
         .comment-card-body {
             min-height: 120px;
+        }
+        /* 表单样式优化 */
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: #333;
+        }
+        .form-control {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.6rem 0.75rem;
+            width: 100%;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-size: 1rem;
+        }
+        .btn-custom:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .btn-custom-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+        }
+        .tab-content {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .nav-tabs {
+            margin-bottom: 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .nav-tabs .nav-link {
+            color: #666;
+            border: 1px solid transparent;
+            border-top-left-radius: 0.375rem;
+            border-top-right-radius: 0.375rem;
+            padding: 0.75rem 1.25rem;
+            font-size: 1.05rem;
+            margin-bottom: -1px;
+        }
+        .nav-tabs .nav-link.active {
+            color: #007bff;
+            background-color: #fff;
+            border-color: #dee2e6 #dee2e6 #fff;
+            font-weight: 500;
+        }
+        .form-text {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1rem 1.25rem;
+            font-size: 1.1rem;
+        }
+        .card-body {
+            padding: 1.25rem;
         }
     </style>
 
@@ -60,11 +144,11 @@
                                 <div class="col-md-8">
                                     <div class="card-body">
                                         <h5 class="card-title">{{ queryset_user.username }}</h5>
-                                        <p class="card-text">
-                                            春夏秋冬自然,明月清风共我,有春风拂面的温柔,也有美好故事的发生,
-                                            又一个春天如约而至,温柔的朝阳里布谷鸟声声呼唤,愿普天同安暖
+                                        <p class="card-text text-muted">
+                                            昵称：{{ queryset_user.nickname|default:"未设置" }}<br>
+                                            性别：{% if queryset_user.sex == 1 %}男{% elif queryset_user.sex == 2 %}女{% else %}未设置{% endif %}<br>
+                                            年龄：{{ queryset_user.age|default:"未设置" }}<br>
                                         </p>
-                                        <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
                                     </div>
                                 </div>
                             </div>
@@ -80,15 +164,111 @@
                             <h5 class="card-subtitle mb-3 text-muted">请留下您宝贵的意见</h5>
                             {% if messages %}
                                 {% for mes in messages %}
-                                    <span class="text-danger">{{ mes.message }}</span>
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        {{ mes.message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
                                 {% endfor %}
                             {% endif %}
                             <form method="get" action="/board/add/">
                                 <div class="form-floating">
                                     <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea" style="height: 120px;" name="boardMessage" required></textarea>
+                                    <label for="floatingTextarea">留言内容</label>
                                 </div>
-                                <button class="btn btn-primary mt-3" type="submit">提交</button>
+                                <button class="btn btn-custom mt-3" type="submit">提交留言</button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个人信息编辑与密码修改标签页 -->
+            <div class="row mt-4">
+                <div class="col-lg-12">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">个人信息编辑</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">修改密码（验证邮箱）</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <!-- 个人信息编辑表单 -->
+                        <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                            <div class="card profile-card mb-3">
+                                <div class="card-header"><h4>个人信息编辑</h4></div>
+                                <div class="card-body">
+                                    <form method="post" action="/user/profile/update/">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label class="form-label" for="nickname">用户昵称</label>
+                                            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ queryset_user.nickname|default:'' }}" required placeholder="请输入昵称">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="sex">性别</label>
+                                            <select class="form-control" id="sex" name="sex" required>
+                                                <option value="" disabled {% if not queryset_user.sex %}selected{% endif %}>请选择性别</option>
+                                                <option value="1" {% if queryset_user.sex == 1 %}selected{% endif %}>男</option>
+                                                <option value="2" {% if queryset_user.sex == 2 %}selected{% endif %}>女</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label" for="age">年龄</label>
+                                            <input type="number" class="form-control" id="age" name="age" value="{{ queryset_user.age|default:'' }}" min="0" max="120" placeholder="请输入年龄（0-120）">
+                                        </div>
+                                        <button type="submit" class="btn btn-custom">保存个人信息</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 密码修改表单（仅验证邮箱一致性） -->
+                        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                            <div class="card profile-card mb-3">
+                                <div class="card-header"><h4>修改密码</h4></div>
+                                <div class="card-body">
+                                    <!-- 后端提示信息显示 -->
+                                    {% if messages %}
+                                        {% for mes in messages %}
+                                            <div class="alert alert-{% if mes.tags == 'success' %}success{% else %}danger{% endif %} alert-dismissible fade show" role="alert">
+                                                {{ mes.message }}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    <form method="post" action="/user/password/update/" id="passwordForm">
+                                        {% csrf_token %}
+                                        <!-- 1. 邮箱（不可修改） -->
+                                        <div class="form-group">
+                                            <label class="form-label" for="email">绑定邮箱（不可修改）</label>
+                                            <input type="email" class="form-control" id="email" name="email" value="{{ queryset_user.email }}" readonly>
+                                            <small class="form-text text-muted">请确认该邮箱为您的账号绑定邮箱</small>
+                                        </div>
+
+                                        <!-- 2. 验证标识区域 -->
+                                        <div class="form-group" id="verifySection">
+                                            <label class="form-label" for="verify_code">验证标识</label>
+                                            <input type="text" class="form-control" id="verify_code" name="verify_code" placeholder="邮箱验证通过后，输入任意6位数字" required>
+                                            <button type="button" class="btn btn-custom btn-custom-sm mt-2" id="send_code">验证邮箱</button>
+                                            <small class="form-text text-muted">注：仅验证输入邮箱与账号绑定邮箱一致，无需接收邮件</small>
+                                        </div>
+
+                                        <!-- 3. 密码修改区域（初始隐藏，验证通过后显示） -->
+                                        <div class="form-group" id="passwordSection" style="display: none;">
+                                            <label class="form-label mt-3" for="new_password">新密码</label>
+                                            <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required>
+
+                                            <label class="form-label mt-3" for="confirm_password">确认新密码</label>
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
+                                        </div>
+
+                                        <!-- 4. 提交按钮（初始隐藏，验证通过后显示） -->
+                                        <button type="submit" class="btn btn-custom mt-3" id="submitBtn" style="display: none;">修改密码</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,23 +277,25 @@
             <!-- 收藏记录 -->
             <div class="row mt-4">
                 <div class="col-lg-12">
-                    <div class="card mb-3">
+                    <div class="card mb-3 profile-card">
                         <div class="card-header"><h4>收藏记录</h4></div>
                         {% if queryset_collect %}
                             <div class="row p-3">
                                 {% for obj in queryset_collect %}
-                                    <div class="col-lg-2 col-md-3 profile-card-container">
+                                    <div class="col-lg-2 col-md-3 col-sm-4 profile-card-container">
                                         <div class="card profile-card">
-                                            <!-- 关键修改：调整跳转链接为电影详情页路径 -->
                                             <a href="/movie/{{ obj.movie_information.movie_ID }}/details/">
                                                 {% if obj.movie_information.poster and obj.movie_information.poster != "" %}
-                                                    <img class="card-img-top profile-img" src="{{ obj.movie_information.poster }}" alt="{{ obj.movie_information.name }}" style="height: 180px;">
+                                                    <img class="card-img-top profile-img" src="{{ obj.movie_information.poster }}" alt="{{ obj.movie_information.name }}" style="height: 220px;">
                                                 {% else %}
-                                                    <img class="card-img-top profile-img" src="/static/img/wt.jpg" alt="暂无海报" style="height: 180px;">
+                                                    <img class="card-img-top profile-img" src="/static/img/wt.jpg" alt="暂无海报" style="height: 220px;">
                                                 {% endif %}
                                             </a>
-                                            <div class="card-body">
-                                                <p class="card-title text-truncate">{{ obj.movie_information.name }}</p>
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title text-truncate">{{ obj.movie_information.name }}</h6>
+                                                <p class="card-text text-sm text-muted">
+                                                    评分：{{ obj.movie_information.movie_score|default:"暂无" }}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -121,7 +303,7 @@
                             </div>
                         {% else %}
                             <div class="card-body">
-                                <h4 class="text-center">暂无收藏内容</h4>
+                                <h4 class="text-center text-muted py-5">暂无收藏内容，快去收藏喜欢的电影吧～</h4>
                             </div>
                         {% endif %}
                     </div>
@@ -130,8 +312,9 @@
         </div>
     </section>
 
-    <!-- 图片加载失败处理 -->
+    <!-- 图片加载失败处理 + 表单交互JS -->
     <script>
+        // 图片加载失败处理
         document.addEventListener('error', function(e) {
             const target = e.target;
             if (target.tagName === 'IMG' && target.src.indexOf('/static/img/wt.jpg') === -1) {
@@ -139,7 +322,65 @@
                 target.alt = '图片加载失败';
             }
         }, true);
+
+        // 邮箱验证交互（仅对比数据库邮箱）
+        document.getElementById('send_code').addEventListener('click', function() {
+            const email = document.getElementById('email').value;
+            const userEmail = "{{ queryset_user.email }}"; // 后端传递的数据库邮箱
+
+            // 对比邮箱一致性
+            if (email !== userEmail) {
+                alert('输入的邮箱与账号绑定邮箱不一致！');
+                return;
+            }
+
+            // 核心功能：显示密码框和提交按钮
+            document.getElementById('passwordSection').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'block';
+
+            // 交互提示
+            alert('邮箱验证通过！请输入任意6位数字作为验证标识');
+
+            // 倒计时逻辑
+            let countdown = 30;
+            this.disabled = true;
+            const timer = setInterval(() => {
+                countdown--;
+                this.innerHTML = `重新验证(${countdown}s)`;
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    this.innerHTML = '验证邮箱';
+                    this.disabled = false;
+                }
+            }, 1000);
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', function(e) {
+        e.preventDefault(); // 阻止表单默认提交
+        const form = document.getElementById('passwordForm');
+        const formData = new FormData(form);
+
+        // 发送 AJAX 请求
+        fetch('/user/password/update/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.href = data.login_url; // 跳转到登录页
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('密码修改失败:', error);
+            alert('网络错误，请稍后再试');
+        });
+    });
     </script>
 {% endblock %}
-
-

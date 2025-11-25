@@ -1,4 +1,5 @@
 from board import Board
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django import forms
@@ -14,22 +15,18 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 # 新增导入（用于装饰器）
 from functools import wraps
-from .models import Movie, Board, UserInfo, Comment #修改
 
 
 def superuser_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        # 1. 未登录用户：跳转到登录页，记录原访问地址（登录后可跳转回来）
         if not request.user.is_authenticated:
             return redirect(f'/login/?next={request.path}')
 
-        # 2. 已登录但非超级用户：跳普通首页+提示无权限
         if not request.user.is_superuser:
             messages.error(request, '无权限访问管理员页面！')
             return redirect('/front_index/')
 
-        # 3. 超级用户：正常执行原视图
         return view_func(request, *args, **kwargs)
 
     return _wrapped_view
@@ -56,6 +53,7 @@ class LoginForm(forms.Form):
 
 def login_user(request):
     if request.method == "GET":
+        # GET 请求渲染登录页
         return render(request, 'login.html')
 
     if request.method == "POST":
@@ -67,15 +65,16 @@ def login_user(request):
             if user:
                 login(request, user)
                 request.session.set_expiry(None)
-                # 处理next参数：超级用户跳原目标，普通用户跳普通首页
-                next_url = request.GET.get('next', '')
-                if user.is_superuser and next_url.startswith('/'):
-                    return redirect(next_url)
-                else:
-                    return redirect('/front_index/')
+                next_url = request.GET.get('next', '/front_index/')  # 默认为首页
+                return redirect(next_url)
             else:
                 messages.error(request, '用户不存在或密码错误!')
                 return redirect('/login/')
+        else:
+            # 表单验证失败，返回错误并渲染登录页
+            return render(request, 'login.html', {'form': form})
+    # 其他请求方法（如PUT/DELETE）返回405
+    return HttpResponse(status=405)
 
 
 class RegisterForm(forms.Form):
@@ -379,17 +378,45 @@ def recommend(request):
         return redirect('/front_index')
 
 
+# 唯一个人中心视图（整合原profile逻辑，支持个人信息编辑、密码修改、收藏/评论展示）
+@login_required
 def center(request):
-    queryset_user = UserInfo.objects.filter(username=request.user.username)
-    queryset_comment = Comment.objects.filter(comment_user=request.user.username)
-    queryset_collect = Collect.objects.filter(collect_user=request.user.username)
-    page_object = Pagination(request, queryset_comment)
+    try:
+        # 1. 查询当前登录用户信息（用于展示和编辑）
+        queryset_user = UserInfo.objects.get(username=request.user.username)
+        # 2. 查询用户评论（原有功能）
+        queryset_comment = Comment.objects.filter(comment_user=queryset_user.user_ID)
+        # 3. 查询用户收藏（修复字段：collect_user=request.user.username，匹配你的Collect模型）
+        queryset_collect = Collect.objects.filter(collect_user=request.user.username)
+
+        # 评论分页处理（原有功能）
+        page_object = Pagination(request, queryset_comment)
+        processed_page_queryset = []
+        for comment in page_object.page_queryset:
+            user_id = comment.comment_user
+            if len(user_id) > 8:
+                masked_user_id = f"{user_id[:4]}...{user_id[-4:]}"
+            else:
+                masked_user_id = user_id
+            comment_date = comment.comment_time.date()
+            processed_page_queryset.append({
+                'obj': comment,
+                'masked_user_id': masked_user_id,
+                'comment_date': comment_date,
+            })
+    except UserInfo.DoesNotExist:
+        queryset_user = None
+        queryset_collect = []
+        processed_page_queryset = []
+        page_object = None
+
     context = {
         "queryset_user": queryset_user,
         "queryset_collect": queryset_collect,
-        "queryset": page_object.page_queryset,  # 分页的数据
-        "page_string": page_object.html()  # 页码
+        "queryset": processed_page_queryset,
+        "page_string": page_object.html() if page_object else "",
     }
+    # 渲染个人中心模板（使用你的原有模板 front_center.html，无需新增 front_profile.html）
     return render(request, 'front_center.html', context)
 
 
@@ -476,7 +503,7 @@ def movie(request):
     return render(request, 'admin_movie.html', context)
 
 
-# 电影添加接口（排除CSRF校验）
+# 电影添加
 @superuser_required
 @csrf_exempt
 def movie_add(request):
@@ -485,13 +512,12 @@ def movie_add(request):
     if form.is_valid():
         # 自动生成movie_ID（时间戳+片长）
         form.instance.movie_ID = datetime.now().strftime("%Y%m%d%H%M%S") + str(form.instance.min)
-        form.save()  # 保存数据到数据库
-        return JsonResponse({"status": True})  # 返回成功响应
-    # 表单验证失败，返回错误信息
+        form.save()
+        return JsonResponse({"status": True})
     return JsonResponse({"status": False, "error": form.errors})
 
 
-# 电影删除接口
+# 电影删除
 @superuser_required  # 新增装饰器
 def movie_delete(request):
     uid = request.GET.get('uid')  # 获取要删除的电影ID
@@ -505,15 +531,13 @@ def movie_delete(request):
     return JsonResponse({"status": True})  # 返回成功响应
 
 
-# 电影详情接口：获取单部电影的详细信息
-@superuser_required  # 新增装饰器
+# 电影详情
+@superuser_required
 def movie_detail(request):
-    uid = request.GET.get("uid")  # 获取电影ID
-    # 查询对应的电影对象（取第一个）
+    uid = request.GET.get("uid")
     row_object = Movie.objects.filter(movie_ID=uid).first()
     if not row_object:
         return JsonResponse({"status": False, "error": "数据不存在。"})
-    # 构造返回的电影详情数据
     result = {
         "status": True,
         "data": {
@@ -530,26 +554,23 @@ def movie_detail(request):
             "poster": row_object.poster,
         }
     }
-    return JsonResponse(result)  # 返回JSON格式的详情数据
+    return JsonResponse(result)
 
 
-# 电影编辑接口（排除CSRF校验）
-@superuser_required  # 新增装饰器
+# 电影编辑
+@superuser_required
 @csrf_exempt
 def movie_edit(request):
-    uid = request.GET.get("uid")  # 获取要编辑的电影ID
-    # 查询对应的电影对象
+    uid = request.GET.get("uid")
     row_object = Movie.objects.filter(movie_ID=uid).first()
     if not row_object:
         return JsonResponse({"status": False, "tips": "数据不存在，请刷新重试。"})
 
-    # 用POST数据和已有对象初始化表单（实现编辑功能）
     form = MovieModelForm(data=request.POST, instance=row_object)
     if form.is_valid():
-        form.save()  # 保存修改后的数据
+        form.save()  #
         return JsonResponse({"status": True})
 
-    # 表单验证失败，返回错误信息
     return JsonResponse({"status": False, "error": form.errors})
 
 
@@ -566,11 +587,11 @@ class UserModelForm(forms.ModelForm):
             field.widget.attrs = {"class": "form-control", "placeholder": field.label}
 
 
-# 用户管理页面视图：展示用户列表、搜索、分页
+# 用户管理页面
 @superuser_required  # 新增装饰器
 def users(request):
     data_dict = {}
-    # 获取搜索关键词（默认空字符串）
+    # 获取搜索关键词
     search_data = request.GET.get('search', "")
     if search_data:
         # 按用户名模糊搜索
@@ -585,13 +606,13 @@ def users(request):
         "form": form,
         "search_data": search_data,
         "queryset": page_object.page_queryset,  # 分页后的数据
-        "page_string": page_object.html()  # 分页页码HTML
+        "page_string": page_object.html()  # 分页
     }
     # 渲染用户管理页面模板
     return render(request, 'admin_users.html', context)
 
 
-# 用户删除接口
+# 用户删除
 @superuser_required  # 新增装饰器
 def users_delete(request):
     uid = request.GET.get('uid')  # 获取要删除的用户ID
@@ -605,8 +626,8 @@ def users_delete(request):
     return JsonResponse({"status": True})  # 返回成功响应
 
 
-# 用户密码重置接口
-@superuser_required  # 新增装饰器
+# 用户密码重置
+@superuser_required
 def users_reset(request):
     uid = request.GET.get('uid')  # 获取要重置密码的用户ID
     # 检查用户是否存在
@@ -642,3 +663,88 @@ def search_result(request):
         return render(request, "search_result.html", {"movies": []})
     movies = Movie.objects.filter(name__icontains=keyword)
     return render(request, "search_result.html", {"movies": movies, "keyword": keyword})
+
+
+# 个人信息更新视图（修改后跳转回 center/）
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        user = request.user  # 当前登录用户
+        try:
+            nickname = request.POST.get('nickname', '').strip()
+            sex = request.POST.get('sex', '')
+            age = request.POST.get('age', '')
+
+            if not nickname:
+                messages.error(request, '昵称不能为空！')
+                return redirect('/center/')
+
+            user.nickname = nickname
+            user.sex = int(sex) if sex and sex.isdigit() else None
+            user.age = int(age) if age and age.isdigit() else None
+            user.save()  # 保存到数据库
+
+            messages.success(request, '个人信息更新成功！')
+        except Exception as e:
+            messages.error(request, f'更新失败：{str(e)}')
+
+        # 保存后跳转回个人中心（唯一入口）
+        return redirect('/center/')
+
+    # GET请求直接返回个人中心
+    return redirect('/center/')
+
+
+# 发送验证码视图（仅验证邮箱一致性，无实际邮件发送）
+@login_required
+def send_verify_code(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        email = data.get('email', '').strip()
+        # 校验邮箱是否为空
+        if not email:
+            return JsonResponse({'success': False, 'message': '邮箱不能为空！'})
+        if request.user.email != email:
+            return JsonResponse({'success': False, 'message': '邮箱与当前账号不匹配！'})
+
+        return JsonResponse({'success': True, 'message': '邮箱验证通过！'})
+
+    return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
+
+
+@login_required
+def update_password(request):
+    if request.method == 'POST':
+        user = request.user
+        try:
+            email = request.POST.get('email', '').strip()
+            verify_code = request.POST.get('verify_code', '').strip()
+            new_password = request.POST.get('new_password', '').strip()
+            confirm_password = request.POST.get('confirm_password', '').strip()
+
+            if user.email != email:
+                return JsonResponse({'success': False, 'message': '邮箱与当前账号不匹配！'})
+
+            if not verify_code or len(verify_code) != 6 or not verify_code.isdigit():
+                return JsonResponse({'success': False, 'message': '请输入6位数字作为验证标识！'})
+
+            if new_password != confirm_password:
+                return JsonResponse({'success': False, 'message': '两次密码输入不一致！'})
+
+            if len(new_password) < 6:
+                return JsonResponse({'success': False, 'message': '新密码长度不能少于6位！'})
+
+            user.set_password(new_password)
+            user.save()
+            logout(request)  # 密码修改后主动登出
+
+            return JsonResponse({
+                'success': True,
+                'message': '密码修改成功，请重新登录！',
+                'login_url': '/login/'  # 登录页路径
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'修改失败：{str(e)}'})
+
+    return JsonResponse({'success': False, 'message': '仅支持POST请求！'})

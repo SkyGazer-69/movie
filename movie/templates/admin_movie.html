@@ -53,7 +53,7 @@
                     <h5 class="mb-0 font-weight-bold">影片管理</h5>
                 </div>
                 <div class="card-body p-4">
-                    <!-- 搜索和新增区域 -->
+                    <!-- 搜索区域（删除了新增按钮） -->
                     <div class="search-bar d-flex flex-wrap align-items-center justify-content-between">
                         <form class="d-flex flex-1 flex-sm-auto me-3" method="get">
                             <input class="form-control me-2" name="search" type="search"
@@ -63,9 +63,7 @@
                                 <i class="fa fa-search me-1"></i>
                             </button>
                         </form>
-                        <button class="btn btn-success" type="button" id="btnAdd">
-                            <i class="bi bi-plus-circle me-1"></i> 新建影片
-                        </button>
+                        <!-- 已删除：新建影片按钮 -->
                     </div>
 
                     <!-- 表格区域 -->
@@ -128,12 +126,12 @@
         </div>
     </div>
 
-    <!-- 新建/编辑模态框 -->
+    <!-- 编辑模态框（保留，仅用于编辑） -->
     <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content rounded shadow">
                 <div class="modal-header bg-light">
-                    <h4 class="modal-title" id="myModalLabel">新建影片</h4>
+                    <h4 class="modal-title" id="myModalLabel">编辑影片</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -185,32 +183,18 @@
     var EDIT_ID;
 
     $(function () {
-        bindBtnAddEvent();
         bindBtnSaveEvent();
         bindBtnDeleteEvent();
         bindBtnConfirmDeleteEvent();
         bindBtnEditEvent();
     });
 
-    // 绑定“新建”按钮事件
-    function bindBtnAddEvent() {
-        $("#btnAdd").click(function () {
-            EDIT_ID = undefined;
-            $("#formAdd")[0].reset();
-            $(".error-msg").empty();
-            $("#myModalLabel").text("新建影片");
-            $("#myModal").modal('show');
-        });
-    }
-
-    // 绑定“保存”按钮事件
+    // 绑定“保存”按钮事件（仅保留编辑功能）
     function bindBtnSaveEvent() {
         $("#btnSave").click(function () {
             $(".error-msg").empty();
             if (EDIT_ID) {
                 doEdit();
-            } else {
-                doAdd();
             }
         });
     }
@@ -235,27 +219,6 @@
                             $("#id_" + name).next().text(errorList[0]);
                         });
                     }
-                }
-            }
-        });
-    }
-
-    // 添加请求
-    function doAdd() {
-        $.ajax({
-            url: "/movie/add/",
-            type: "post",
-            data: $("#formAdd").serialize(),
-            dataType: "JSON",
-            success: function (res) {
-                if (res.status) {
-                    $("#formAdd")[0].reset();
-                    $("#myModal").modal('hide');
-                    location.reload();
-                } else {
-                    $.each(res.error, function (name, errorList) {
-                        $("#id_" + name).next().text(errorList[0]);
-                    });
                 }
             }
         });
