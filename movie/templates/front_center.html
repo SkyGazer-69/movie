@@ -115,6 +115,13 @@
         .card-body {
             padding: 1.25rem;
         }
+        /* 错误提示样式 */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
     </style>
 
     <section class="inner-banner py-5">
@@ -223,7 +230,7 @@
                             </div>
                         </div>
 
-                        <!-- 密码修改表单（仅验证邮箱一致性） -->
+                        <!-- 密码修改表单（优化后） -->
                         <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
                             <div class="card profile-card mb-3">
                                 <div class="card-header"><h4>修改密码</h4></div>
@@ -240,32 +247,36 @@
 
                                     <form method="post" action="/user/password/update/" id="passwordForm">
                                         {% csrf_token %}
-                                        <!-- 1. 邮箱（不可修改） -->
+                                        <!-- 1. 邮箱输入区域 -->
                                         <div class="form-group">
-                                            <label class="form-label" for="email">绑定邮箱（不可修改）</label>
-                                            <input type="email" class="form-control" id="email" name="email" value="{{ queryset_user.email }}" readonly>
-                                            <small class="form-text text-muted">请确认该邮箱为您的账号绑定邮箱</small>
+                                            <label class="form-label" for="email">绑定邮箱</label>
+                                            <input type="email" class="form-control" id="email" name="email" placeholder="请输入您的账号绑定邮箱" required>
+                                            <span id="emailError" class="error-message">输入的邮箱与账号绑定邮箱不一致</span>
+                                            <small class="form-text text-muted">请输入您注册时使用的邮箱</small>
                                         </div>
 
-                                        <!-- 2. 验证标识区域 -->
-                                        <div class="form-group" id="verifySection">
-                                            <label class="form-label" for="verify_code">验证标识</label>
-                                            <input type="text" class="form-control" id="verify_code" name="verify_code" placeholder="邮箱验证通过后，输入任意6位数字" required>
-                                            <button type="button" class="btn btn-custom btn-custom-sm mt-2" id="send_code">验证邮箱</button>
-                                            <small class="form-text text-muted">注：仅验证输入邮箱与账号绑定邮箱一致，无需接收邮件</small>
+                                        <!-- 2. 验证按钮 -->
+                                        <div class="form-group mb-4">
+                                            <button type="button" class="btn btn-custom" id="verifyEmailBtn">验证邮箱</button>
                                         </div>
 
-                                        <!-- 3. 密码修改区域（初始隐藏，验证通过后显示） -->
-                                        <div class="form-group" id="passwordSection" style="display: none;">
-                                            <label class="form-label mt-3" for="new_password">新密码</label>
-                                            <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required>
+                                        <!-- 3. 密码修改区域（初始隐藏） -->
+                                        <div id="passwordFormSection" style="display: none;">
+                                            <div class="form-group">
+                                                <label class="form-label" for="new_password">新密码</label>
+                                                <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required minlength="6">
+                                                <span id="passwordLengthError" class="error-message">密码长度不能少于6位</span>
+                                            </div>
 
-                                            <label class="form-label mt-3" for="confirm_password">确认新密码</label>
-                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
+                                            <div class="form-group">
+                                                <label class="form-label" for="confirm_password">确认新密码</label>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
+                                                <span id="passwordMismatchError" class="error-message">两次输入的密码不一致</span>
+                                            </div>
+
+                                            <!-- 提交按钮 -->
+                                            <button type="submit" class="btn btn-custom mt-2">确认修改密码</button>
                                         </div>
-
-                                        <!-- 4. 提交按钮（初始隐藏，验证通过后显示） -->
-                                        <button type="submit" class="btn btn-custom mt-3" id="submitBtn" style="display: none;">修改密码</button>
                                     </form>
                                 </div>
                             </div>
@@ -323,64 +334,131 @@
             }
         }, true);
 
-        // 邮箱验证交互（仅对比数据库邮箱）
-        document.getElementById('send_code').addEventListener('click', function() {
-            const email = document.getElementById('email').value;
-            const userEmail = "{{ queryset_user.email }}"; // 后端传递的数据库邮箱
+        // 密码修改功能核心逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const emailInput = document.getElementById('email');
+            const verifyBtn = document.getElementById('verifyEmailBtn');
+            const passwordSection = document.getElementById('passwordFormSection');
+            const emailError = document.getElementById('emailError');
+            const passwordForm = document.getElementById('passwordForm');
+            const newPasswordInput = document.getElementById('new_password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            const passwordLengthError = document.getElementById('passwordLengthError');
+            const passwordMismatchError = document.getElementById('passwordMismatchError');
 
-            // 对比邮箱一致性
-            if (email !== userEmail) {
-                alert('输入的邮箱与账号绑定邮箱不一致！');
-                return;
-            }
+            // 数据库中存储的用户邮箱（从后端传递）
+            const userDatabaseEmail = "{{ queryset_user.email|default:'' }}";
 
-            // 核心功能：显示密码框和提交按钮
-            document.getElementById('passwordSection').style.display = 'block';
-            document.getElementById('submitBtn').style.display = 'block';
+            // 1. 邮箱验证按钮点击事件
+            verifyBtn.addEventListener('click', function() {
+                const inputEmail = emailInput.value.trim();
 
-            // 交互提示
-            alert('邮箱验证通过！请输入任意6位数字作为验证标识');
+                // 清空之前的错误提示
+                emailError.style.display = 'none';
 
-            // 倒计时逻辑
-            let countdown = 30;
-            this.disabled = true;
-            const timer = setInterval(() => {
-                countdown--;
-                this.innerHTML = `重新验证(${countdown}s)`;
-                if (countdown <= 0) {
-                    clearInterval(timer);
-                    this.innerHTML = '验证邮箱';
-                    this.disabled = false;
+                // 验证邮箱格式
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(inputEmail)) {
+                    alert('请输入有效的邮箱地址');
+                    return;
                 }
-            }, 1000);
-        });
 
-        document.getElementById('submitBtn').addEventListener('click', function(e) {
-        e.preventDefault(); // 阻止表单默认提交
-        const form = document.getElementById('passwordForm');
-        const formData = new FormData(form);
+                // 对比输入邮箱与数据库邮箱
+                if (inputEmail !== userDatabaseEmail) {
+                    emailError.style.display = 'block';
+                    return;
+                }
 
-        // 发送 AJAX 请求
-        fetch('/user/password/update/', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                // 验证通过：显示密码输入区域
+                passwordSection.style.display = 'block';
+                alert('邮箱验证通过！请设置新密码');
+
+                // 聚焦到新密码输入框
+                newPasswordInput.focus();
+            });
+
+            // 2. 密码输入验证（实时校验）
+            newPasswordInput.addEventListener('input', function() {
+                const password = this.value;
+                // 密码长度校验
+                if (password.length < 6) {
+                    passwordLengthError.style.display = 'block';
+                } else {
+                    passwordLengthError.style.display = 'none';
+                }
+                // 同步校验两次密码是否一致
+                checkPasswordMatch();
+            });
+
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+            // 3. 检查两次密码是否一致
+            function checkPasswordMatch() {
+                const newPwd = newPasswordInput.value;
+                const confirmPwd = confirmPasswordInput.value;
+
+                if (newPwd && confirmPwd && newPwd !== confirmPwd) {
+                    passwordMismatchError.style.display = 'block';
+                } else {
+                    passwordMismatchError.style.display = 'none';
+                }
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                window.location.href = data.login_url; // 跳转到登录页
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('密码修改失败:', error);
-            alert('网络错误，请稍后再试');
+
+            // 4. 表单提交事件（AJAX提交，避免页面刷新）
+            passwordForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // 阻止表单默认提交
+
+                // 最终校验
+                let isValid = true;
+
+                // 再次校验邮箱（防止绕过按钮直接提交）
+                if (emailInput.value.trim() !== userDatabaseEmail) {
+                    emailError.style.display = 'block';
+                    isValid = false;
+                }
+
+                // 校验密码长度
+                if (newPasswordInput.value.length < 6) {
+                    passwordLengthError.style.display = 'block';
+                    isValid = false;
+                }
+
+                // 校验两次密码一致
+                if (newPasswordInput.value !== confirmPasswordInput.value) {
+                    passwordMismatchError.style.display = 'block';
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    return;
+                }
+
+                // 发送AJAX请求提交表单
+                const formData = new FormData(passwordForm);
+
+                fetch('/user/password/update/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // 密码修改成功后跳转到登录页
+                        window.location.href = data.login_url;
+                    } else {
+                        alert('修改失败：' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('网络错误：', error);
+                    alert('网络错误，请稍后再试');
+                });
+            });
         });
-    });
     </script>
 {% endblock %}

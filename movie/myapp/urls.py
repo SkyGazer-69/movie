@@ -14,7 +14,7 @@ urlpatterns = [
     path('collect/', views.collect, name='collect'),
     path('comment/add/', views.comment_add, name='comment_add'),
     path('recommend/', views.recommend),
-    path('center/', views.center, name='user_center'),  # 唯一个人中心入口
+    path('center/', views.center, name='user_center'),  # 人中心入口
     path('board/add/', views.board_add),
 
     path('search_suggest/', views.search_suggest, name='search_suggest'),
@@ -33,6 +33,5 @@ urlpatterns = [
 
     # 功能路由（个人信息更新、密码修改）
     path('user/profile/update/', views.update_profile, name='update_profile'),
-    path('user/send_verify_code/', views.send_verify_code, name='send_verify_code'),
     path('user/password/update/', views.update_password, name='update_password'),
 ]

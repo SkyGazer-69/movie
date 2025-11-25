@@ -613,7 +613,7 @@ def users(request):
 
 
 # 用户删除
-@superuser_required  # 新增装饰器
+@superuser_required
 def users_delete(request):
     uid = request.GET.get('uid')  # 获取要删除的用户ID
     # 检查用户是否存在
@@ -665,7 +665,7 @@ def search_result(request):
     return render(request, "search_result.html", {"movies": movies, "keyword": keyword})
 
 
-# 个人信息更新视图（修改后跳转回 center/）
+# 个人信息更新（修改后跳转回 center/）
 @login_required
 def update_profile(request):
     if request.method == 'POST':
@@ -688,28 +688,8 @@ def update_profile(request):
         except Exception as e:
             messages.error(request, f'更新失败：{str(e)}')
 
-        # 保存后跳转回个人中心（唯一入口）
         return redirect('/center/')
-
-    # GET请求直接返回个人中心
     return redirect('/center/')
-
-
-# 发送验证码视图（仅验证邮箱一致性，无实际邮件发送）
-@login_required
-def send_verify_code(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        email = data.get('email', '').strip()
-        # 校验邮箱是否为空
-        if not email:
-            return JsonResponse({'success': False, 'message': '邮箱不能为空！'})
-        if request.user.email != email:
-            return JsonResponse({'success': False, 'message': '邮箱与当前账号不匹配！'})
-
-        return JsonResponse({'success': True, 'message': '邮箱验证通过！'})
-
-    return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
 
 
 @login_required
@@ -718,22 +698,15 @@ def update_password(request):
         user = request.user
         try:
             email = request.POST.get('email', '').strip()
-            verify_code = request.POST.get('verify_code', '').strip()
             new_password = request.POST.get('new_password', '').strip()
             confirm_password = request.POST.get('confirm_password', '').strip()
 
             if user.email != email:
                 return JsonResponse({'success': False, 'message': '邮箱与当前账号不匹配！'})
-
-            if not verify_code or len(verify_code) != 6 or not verify_code.isdigit():
-                return JsonResponse({'success': False, 'message': '请输入6位数字作为验证标识！'})
-
             if new_password != confirm_password:
                 return JsonResponse({'success': False, 'message': '两次密码输入不一致！'})
-
             if len(new_password) < 6:
                 return JsonResponse({'success': False, 'message': '新密码长度不能少于6位！'})
-
             user.set_password(new_password)
             user.save()
             logout(request)  # 密码修改后主动登出
