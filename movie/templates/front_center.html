@@ -122,6 +122,10 @@
             margin-top: 0.25rem;
             display: none;
         }
+        /* 编辑区域默认隐藏 */
+        .edit-section {
+            display: none;
+        }
     </style>
 
     <section class="inner-banner py-5">
@@ -152,9 +156,7 @@
                                     <div class="card-body">
                                         <h5 class="card-title">{{ queryset_user.username }}</h5>
                                         <p class="card-text text-muted">
-                                            昵称：{{ queryset_user.nickname|default:"未设置" }}<br>
-                                            性别：{% if queryset_user.sex == 1 %}男{% elif queryset_user.sex == 2 %}女{% else %}未设置{% endif %}<br>
-                                            年龄：{{ queryset_user.age|default:"未设置" }}<br>
+                                          电影是浓缩的人生，观影是一场心灵的远行。愿永远保有对故事的期待，在光影中找到属于自己的答案。
                                         </p>
                                     </div>
                                 </div>
@@ -194,90 +196,120 @@
                 <div class="col-lg-12">
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">个人信息编辑</button>
+                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">个人信息</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">修改密码（验证邮箱）</button>
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">密码管理</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="myTabContent">
-                        <!-- 个人信息编辑表单 -->
+                        <!-- 个人信息：默认显示按钮，点击后显示编辑表单 -->
                         <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                             <div class="card profile-card mb-3">
-                                <div class="card-header"><h4>个人信息编辑</h4></div>
+                                <div class="card-header">
+                                    <h4>个人信息</h4>
+                                    <!-- 编辑按钮 -->
+                                    <button class="btn btn-custom btn-custom-sm float-end" id="showProfileEdit">编辑个人信息</button>
+                                </div>
                                 <div class="card-body">
-                                    <form method="post" action="/user/profile/update/">
-                                        {% csrf_token %}
-                                        <div class="form-group">
-                                            <label class="form-label" for="nickname">用户昵称</label>
-                                            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ queryset_user.nickname|default:'' }}" required placeholder="请输入昵称">
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label" for="sex">性别</label>
-                                            <select class="form-control" id="sex" name="sex" required>
-                                                <option value="" disabled {% if not queryset_user.sex %}selected{% endif %}>请选择性别</option>
-                                                <option value="1" {% if queryset_user.sex == 1 %}selected{% endif %}>男</option>
-                                                <option value="2" {% if queryset_user.sex == 2 %}selected{% endif %}>女</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label class="form-label" for="age">年龄</label>
-                                            <input type="number" class="form-control" id="age" name="age" value="{{ queryset_user.age|default:'' }}" min="0" max="120" placeholder="请输入年龄（0-120）">
-                                        </div>
-                                        <button type="submit" class="btn btn-custom">保存个人信息</button>
-                                    </form>
+                                    <!-- 信息展示区 -->
+                                    <div id="profileDisplay">
+                                        <p><strong>用户昵称：</strong> {{ queryset_user.nickname|default:"未设置" }}</p>
+                                        <p><strong>性别：</strong> {% if queryset_user.sex == 1 %}男{% elif queryset_user.sex == 2 %}女{% else %}未设置{% endif %}</p>
+                                        <p><strong>年龄：</strong> {{ queryset_user.age|default:"未设置" }}</p>
+                                    </div>
+                                    <!-- 编辑表单区（默认隐藏） -->
+                                    <div class="edit-section" id="profileEditForm">
+                                        <form method="post" action="/user/profile/update/">
+                                            {% csrf_token %}
+                                            <div class="form-group">
+                                                <label class="form-label" for="nickname">用户昵称</label>
+                                                <input type="text" class="form-control" id="nickname" name="nickname" value="{{ queryset_user.nickname|default:'' }}" required placeholder="请输入昵称">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label" for="sex">性别</label>
+                                                <select class="form-control" id="sex" name="sex" required>
+                                                    <option value="" disabled {% if not queryset_user.sex %}selected{% endif %}>请选择性别</option>
+                                                    <option value="1" {% if queryset_user.sex == 1 %}selected{% endif %}>男</option>
+                                                    <option value="2" {% if queryset_user.sex == 2 %}selected{% endif %}>女</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label" for="age">年龄</label>
+                                                <input type="number" class="form-control" id="age" name="age" value="{{ queryset_user.age|default:'' }}" min="0" max="120" placeholder="请输入年龄（0-120）">
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-custom">保存个人信息</button>
+                                                <button type="button" class="btn btn-secondary" id="cancelProfileEdit">取消</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 密码修改表单（优化后） -->
+                        <!-- 密码管理：默认显示按钮，点击后显示修改表单 -->
                         <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
                             <div class="card profile-card mb-3">
-                                <div class="card-header"><h4>修改密码</h4></div>
+                                <div class="card-header">
+                                    <h4>密码管理</h4>
+                                    <!-- 修改按钮 -->
+                                    <button class="btn btn-custom btn-custom-sm float-end" id="showPasswordEdit">修改密码</button>
+                                </div>
                                 <div class="card-body">
-                                    <!-- 后端提示信息显示 -->
-                                    {% if messages %}
-                                        {% for mes in messages %}
-                                            <div class="alert alert-{% if mes.tags == 'success' %}success{% else %}danger{% endif %} alert-dismissible fade show" role="alert">
-                                                {{ mes.message }}
-                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
+                                    <!-- 提示区 -->
+                                    <div id="passwordDisplay">
+                                        <p class="text-muted">点击“修改密码”按钮，验证邮箱后可更新密码</p>
+                                    </div>
+                                    <!-- 密码修改表单区（默认隐藏） -->
+                                    <div class="edit-section" id="passwordEditForm">
+                                        <!-- 后端提示信息显示 -->
+                                        {% if messages %}
+                                            {% for mes in messages %}
+                                                <div class="alert alert-{% if mes.tags == 'success' %}success{% else %}danger{% endif %} alert-dismissible fade show" role="alert">
+                                                    {{ mes.message }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
 
-                                    <form method="post" action="/user/password/update/" id="passwordForm">
-                                        {% csrf_token %}
-                                        <!-- 1. 邮箱输入区域 -->
-                                        <div class="form-group">
-                                            <label class="form-label" for="email">绑定邮箱</label>
-                                            <input type="email" class="form-control" id="email" name="email" placeholder="请输入您的账号绑定邮箱" required>
-                                            <span id="emailError" class="error-message">输入的邮箱与账号绑定邮箱不一致</span>
-                                            <small class="form-text text-muted">请输入您注册时使用的邮箱</small>
-                                        </div>
-
-                                        <!-- 2. 验证按钮 -->
-                                        <div class="form-group mb-4">
-                                            <button type="button" class="btn btn-custom" id="verifyEmailBtn">验证邮箱</button>
-                                        </div>
-
-                                        <!-- 3. 密码修改区域（初始隐藏） -->
-                                        <div id="passwordFormSection" style="display: none;">
+                                        <form method="post" action="/user/password/update/" id="passwordForm">
+                                            {% csrf_token %}
+                                            <!-- 1. 邮箱输入区域 -->
                                             <div class="form-group">
-                                                <label class="form-label" for="new_password">新密码</label>
-                                                <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required minlength="6">
-                                                <span id="passwordLengthError" class="error-message">密码长度不能少于6位</span>
+                                                <label class="form-label" for="email">绑定邮箱</label>
+                                                <input type="email" class="form-control" id="email" name="email" placeholder="请输入您的账号绑定邮箱" required>
+                                                <span id="emailError" class="error-message">输入的邮箱与账号绑定邮箱不一致</span>
+                                                <small class="form-text text-muted">请输入您注册时使用的邮箱</small>
                                             </div>
 
-                                            <div class="form-group">
-                                                <label class="form-label" for="confirm_password">确认新密码</label>
-                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
-                                                <span id="passwordMismatchError" class="error-message">两次输入的密码不一致</span>
+                                            <!-- 2. 验证按钮 -->
+                                            <div class="form-group mb-4">
+                                                <button type="button" class="btn btn-custom" id="verifyEmailBtn">验证邮箱</button>
                                             </div>
 
-                                            <!-- 提交按钮 -->
-                                            <button type="submit" class="btn btn-custom mt-2">确认修改密码</button>
-                                        </div>
-                                    </form>
+                                            <!-- 3. 密码修改区域（初始隐藏） -->
+                                            <div id="passwordFormSection" style="display: none;">
+                                                <div class="form-group">
+                                                    <label class="form-label" for="new_password">新密码</label>
+                                                    <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required minlength="6">
+                                                    <span id="passwordLengthError" class="error-message">密码长度不能少于6位</span>
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label class="form-label" for="confirm_password">确认新密码</label>
+                                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
+                                                    <span id="passwordMismatchError" class="error-message">两次输入的密码不一致</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- 操作按钮 -->
+                                            <div class="d-flex gap-2 mt-2">
+                                                <button type="submit" class="btn btn-custom" id="submitBtn" style="display: none;">确认修改密码</button>
+                                                <button type="button" class="btn btn-secondary" id="cancelPasswordEdit">取消</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -303,7 +335,7 @@
                                                 {% endif %}
                                             </a>
                                             <div class="card-body p-2">
-                                                <h6 class="card-title text-truncate">{{ obj.movie_information.name }}</h6>
+                                                <h6 class="card-title text-truncate" title="{{ obj.movie_information.name }}">{{ obj.movie_information.name }}</h6>
                                                 <p class="card-text text-sm text-muted">
                                                     评分：{{ obj.movie_information.movie_score|default:"暂无" }}
                                                 </p>
@@ -323,7 +355,7 @@
         </div>
     </section>
 
-    <!-- 图片加载失败处理 + 表单交互JS -->
+    <!-- 交互JS -->
     <script>
         // 图片加载失败处理
         document.addEventListener('error', function(e) {
@@ -334,9 +366,47 @@
             }
         }, true);
 
-        // 密码修改功能核心逻辑
+        // 个人信息编辑切换
+        const showProfileEditBtn = document.getElementById('showProfileEdit');
+        const profileDisplay = document.getElementById('profileDisplay');
+        const profileEditForm = document.getElementById('profileEditForm');
+        const cancelProfileEditBtn = document.getElementById('cancelProfileEdit');
+
+        showProfileEditBtn.addEventListener('click', function() {
+            profileDisplay.style.display = 'none';
+            profileEditForm.style.display = 'block';
+            this.style.display = 'none'; // 隐藏编辑按钮
+        });
+
+        cancelProfileEditBtn.addEventListener('click', function() {
+            profileEditForm.style.display = 'none';
+            profileDisplay.style.display = 'block';
+            showProfileEditBtn.style.display = 'block'; // 显示编辑按钮
+        });
+
+        // 密码修改切换
+        const showPasswordEditBtn = document.getElementById('showPasswordEdit');
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const passwordEditForm = document.getElementById('passwordEditForm');
+        const cancelPasswordEditBtn = document.getElementById('cancelPasswordEdit');
+
+        showPasswordEditBtn.addEventListener('click', function() {
+            passwordDisplay.style.display = 'none';
+            passwordEditForm.style.display = 'block';
+            this.style.display = 'none'; // 隐藏修改按钮
+        });
+
+        cancelPasswordEditBtn.addEventListener('click', function() {
+            passwordEditForm.style.display = 'none';
+            passwordDisplay.style.display = 'block';
+            showPasswordEditBtn.style.display = 'block'; // 显示修改按钮
+            // 重置表单状态
+            document.getElementById('passwordFormSection').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'none';
+        });
+
+        // 密码修改功能核心逻辑（保留原逻辑）
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取DOM元素
             const emailInput = document.getElementById('email');
             const verifyBtn = document.getElementById('verifyEmailBtn');
             const passwordSection = document.getElementById('passwordFormSection');
@@ -346,58 +416,48 @@
             const confirmPasswordInput = document.getElementById('confirm_password');
             const passwordLengthError = document.getElementById('passwordLengthError');
             const passwordMismatchError = document.getElementById('passwordMismatchError');
+            const submitBtn = document.getElementById('submitBtn');
 
-            // 数据库中存储的用户邮箱（从后端传递）
             const userDatabaseEmail = "{{ queryset_user.email|default:'' }}";
 
-            // 1. 邮箱验证按钮点击事件
+            // 邮箱验证按钮点击事件
             verifyBtn.addEventListener('click', function() {
                 const inputEmail = emailInput.value.trim();
-
-                // 清空之前的错误提示
                 emailError.style.display = 'none';
 
-                // 验证邮箱格式
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(inputEmail)) {
                     alert('请输入有效的邮箱地址');
                     return;
                 }
 
-                // 对比输入邮箱与数据库邮箱
                 if (inputEmail !== userDatabaseEmail) {
                     emailError.style.display = 'block';
                     return;
                 }
 
-                // 验证通过：显示密码输入区域
                 passwordSection.style.display = 'block';
+                submitBtn.style.display = 'block';
                 alert('邮箱验证通过！请设置新密码');
-
-                // 聚焦到新密码输入框
                 newPasswordInput.focus();
             });
 
-            // 2. 密码输入验证（实时校验）
+            // 密码输入验证
             newPasswordInput.addEventListener('input', function() {
                 const password = this.value;
-                // 密码长度校验
                 if (password.length < 6) {
                     passwordLengthError.style.display = 'block';
                 } else {
                     passwordLengthError.style.display = 'none';
                 }
-                // 同步校验两次密码是否一致
                 checkPasswordMatch();
             });
 
             confirmPasswordInput.addEventListener('input', checkPasswordMatch);
 
-            // 3. 检查两次密码是否一致
             function checkPasswordMatch() {
                 const newPwd = newPasswordInput.value;
                 const confirmPwd = confirmPasswordInput.value;
-
                 if (newPwd && confirmPwd && newPwd !== confirmPwd) {
                     passwordMismatchError.style.display = 'block';
                 } else {
@@ -405,38 +465,29 @@
                 }
             }
 
-            // 4. 表单提交事件（AJAX提交，避免页面刷新）
+            // 表单提交
             passwordForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // 阻止表单默认提交
-
-                // 最终校验
+                e.preventDefault();
                 let isValid = true;
 
-                // 再次校验邮箱（防止绕过按钮直接提交）
                 if (emailInput.value.trim() !== userDatabaseEmail) {
                     emailError.style.display = 'block';
                     isValid = false;
                 }
 
-                // 校验密码长度
                 if (newPasswordInput.value.length < 6) {
                     passwordLengthError.style.display = 'block';
                     isValid = false;
                 }
 
-                // 校验两次密码一致
                 if (newPasswordInput.value !== confirmPasswordInput.value) {
                     passwordMismatchError.style.display = 'block';
                     isValid = false;
                 }
 
-                if (!isValid) {
-                    return;
-                }
+                if (!isValid) return;
 
-                // 发送AJAX请求提交表单
                 const formData = new FormData(passwordForm);
-
                 fetch('/user/password/update/', {
                     method: 'POST',
                     body: formData,
@@ -448,7 +499,6 @@
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        // 密码修改成功后跳转到登录页
                         window.location.href = data.login_url;
                     } else {
                         alert('修改失败：' + data.message);

@@ -56,10 +56,7 @@ class UserInfo(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, null=False, verbose_name="用户名", unique=True)
     password = models.CharField(max_length=255, null=False, verbose_name="用户密码")
     nickname = models.CharField(max_length=255, null=False, verbose_name="用户昵称")
-    sex_choice = (
-        (1, "男"),
-        (2, "女"),
-    )
+    sex_choice = ((1, "男"),(2, "女"),)
     sex = models.IntegerField(choices=sex_choice, null=False, verbose_name="性别", default=1)
     age = models.IntegerField(verbose_name="年龄", null=True)
     email = models.EmailField(null=False, verbose_name="邮箱", unique=False)

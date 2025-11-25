@@ -144,14 +144,14 @@ def logout_user(request):
 
 
 def index(request):
-    queryset_hot = Movie.objects.order_by('-moive_time')[:8]
-    queryset_high = Movie.objects.order_by('-moive_time')[:8]
+    queryset_hot = Movie.objects.order_by('-moive_time', 'movie_ID')[:8]
+    queryset_high = Movie.objects.order_by('-movie_score', 'movie_ID')[:8]
     return render(request, 'front_index.html', {"queryset_hot": queryset_hot, "queryset_high": queryset_high})
 
 
 def front_index(request):
-    queryset_hot = Movie.objects.order_by('-moive_time')[:8]
-    queryset_high = Movie.objects.order_by('-moive_time')[:8]
+    queryset_hot = Movie.objects.order_by('-moive_time', 'movie_ID')[:8]
+    queryset_high = Movie.objects.order_by('-movie_score', 'movie_ID')[:8]
     return render(request, 'front_index.html', {"queryset_hot": queryset_hot, "queryset_high": queryset_high})
 
 
