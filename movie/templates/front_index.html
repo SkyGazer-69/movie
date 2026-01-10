@@ -152,9 +152,11 @@
                                 title="{{ obj.name }}">
                                     {{ obj.name }}
                                 </h4>
-                                <div class="release-time text-muted" style="font-size: 14px;">
-                                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                                <div class="release-time text-muted" style="font-size:14px;">
+                                  <span style="max-width:180px; display:inline-block; overflow:hidden;
+                                  text-overflow:ellipsis; white-space:nowrap;" title="{{ obj.moive_time }}">
                                     上映时间：{{ obj.moive_time }}
+                                  </span>
                                 </div>
                             </div>
                         </div>

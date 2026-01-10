@@ -382,11 +382,11 @@ def recommend(request):
 @login_required
 def center(request):
     try:
-        # 1. 查询当前登录用户信息（用于展示和编辑）
+        # 1. 查询当前登录用户信息
         queryset_user = UserInfo.objects.get(username=request.user.username)
-        # 2. 查询用户评论（原有功能）
+        # 2. 查询用户评论
         queryset_comment = Comment.objects.filter(comment_user=queryset_user.user_ID)
-        # 3. 查询用户收藏（修复字段：collect_user=request.user.username，匹配你的Collect模型）
+        # 3. 查询用户收藏
         queryset_collect = Collect.objects.filter(collect_user=request.user.username)
 
         # 评论分页处理（原有功能）
@@ -416,7 +416,7 @@ def center(request):
         "queryset": processed_page_queryset,
         "page_string": page_object.html() if page_object else "",
     }
-    # 渲染个人中心模板（使用你的原有模板 front_center.html，无需新增 front_profile.html）
+    # 渲染个人中心模板
     return render(request, 'front_center.html', context)
 
 
@@ -482,7 +482,7 @@ class MovieModelForm(forms.ModelForm):
 @superuser_required
 def movie(request):
     data_dict = {}
-    # 获取搜索关键词（默认空字符串）
+    # 获取搜索关键词
     search_data = request.GET.get('search', "")
     if search_data:
         # 按电影名称模糊搜索
@@ -510,7 +510,7 @@ def movie_add(request):
     # 用POST数据初始化表单
     form = MovieModelForm(data=request.POST)
     if form.is_valid():
-        # 自动生成movie_ID（时间戳+片长）
+        # 自动生成movie_ID
         form.instance.movie_ID = datetime.now().strftime("%Y%m%d%H%M%S") + str(form.instance.min)
         form.save()
         return JsonResponse({"status": True})
@@ -665,7 +665,7 @@ def search_result(request):
     return render(request, "search_result.html", {"movies": movies, "keyword": keyword})
 
 
-# 个人信息更新（修改后跳转回 center/）
+# 个人信息更新
 @login_required
 def update_profile(request):
     if request.method == 'POST':

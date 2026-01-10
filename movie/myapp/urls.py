@@ -34,4 +34,6 @@ urlpatterns = [
     # 功能路由（个人信息更新、密码修改）
     path('user/profile/update/', views.update_profile, name='update_profile'),
     path('user/password/update/', views.update_password, name='update_password'),
+
+
 ]

@@ -4,66 +4,61 @@
 {% block title %}影片管理{% endblock %}
 
 {% block css %}
-<style>
-    .table th, .table td {
-        vertical-align: middle;
-    }
-    .btn-action {
-        transition: all 0.2s ease;
-    }
-    .btn-action:hover {
-        transform: scale(1.05);
-    }
+<styleS>
+    .table th, .table td { vertical-align: middle; }
+    .btn-action { transition: all 0.2s ease; }
+    .btn-action:hover { transform: scale(1.05); }
     .form-control:focus {
         box-shadow: 0 0 0 0.25rem rgba(59, 113, 202, 0.25);
         border-color: var(--primary);
     }
-    .search-bar {
-        margin-bottom: 1.5rem;
-    }
+    .search-bar { margin-bottom: 1.5rem; }
     .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
-    .modal-body .form-group {
-        margin-bottom: 1.5rem;
-    }
-    .modal-body label {
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
     .error-msg {
         font-size: 0.875rem;
         margin-top: 0.25rem;
+        color: red;
     }
     .pagination .page-item.active .page-link {
         background-color: var(--primary);
         border-color: var(--primary);
     }
-</style>
+    #formAdd input, #formAdd select, #formAdd textarea {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+</styleS>
 {% endblock %}
 
 {% block main-container %}
     <div class="row g-4">
         <div class="col-12">
-            <div class="card rounded shadow h-100">
+            <div class="card rounded shadow">
                 <div class="card-header bg-white py-3">
                     <h5 class="mb-0 font-weight-bold">影片管理</h5>
                 </div>
                 <div class="card-body p-4">
-                    <!-- 搜索区域（删除了新增按钮） -->
+                    <!-- 搜索区域 -->
                     <div class="search-bar d-flex flex-wrap align-items-center justify-content-between">
-                        <form class="d-flex flex-1 flex-sm-auto me-3" method="get">
+                        <form class="d-flex me-3" method="get">
                             <input class="form-control me-2" name="search" type="search"
-                                   placeholder="模糊搜索（根据影片名）" aria-label="Search"
+                                   placeholder="模糊搜索" aria-label="Search"
                                    value="{{ request.GET.search|default:'' }}">
                             <button class="btn btn-primary" type="submit">
                                 <i class="fa fa-search me-1"></i>
                             </button>
                         </form>
-                        <!-- 已删除：新建影片按钮 -->
                     </div>
 
                     <!-- 表格区域 -->
@@ -92,11 +87,11 @@
                                         <td>{{ obj.director }}</td>
                                         <td>{{ obj.type }}</td>
                                         <td>
-                                            <button id="{{ obj.movie_ID }}"
+                                            <button data-uid="{{ obj.movie_ID }}"
                                                     type="button" class="btn btn-outline-primary btn-sm btn-edit btn-action me-2">
                                                 <i class="fa fa-edit me-1"></i> 编辑
                                             </button>
-                                            <button id="{{ obj.movie_ID }}"
+                                            <button data-uid="{{ obj.movie_ID }}"
                                                     type="button" class="btn btn-outline-danger btn-sm btn-delete btn-action">
                                                 <i class="fa fa-trash me-1"></i> 删除
                                             </button>
@@ -126,21 +121,22 @@
         </div>
     </div>
 
-    <!-- 编辑模态框（保留，仅用于编辑） -->
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+    <!-- 编辑模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content rounded shadow">
                 <div class="modal-header bg-light">
-                    <h4 class="modal-title" id="myModalLabel">编辑影片</h4>
+                    <h4 class="modal-title">编辑影片</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="formAdd" class="row g-3">
+                        {% csrf_token %}
                         {% for field in form %}
-                            <div class="form-group col-md-12" style="position: relative;">
-                                <label for="id_{{ field.name }}">{{ field.label }}</label>
+                            <div class="col-md-12 mb-3">
+                                <label for="id_{{ field.name }}" class="form-label">{{ field.label }}</label>
                                 {{ field }}
-                                <span class="error-msg" style="color: red;position: absolute;"></span>
+                                <span class="error-msg"></span>
                             </div>
                         {% endfor %}
                     </form>
@@ -154,11 +150,11 @@
     </div>
 
     <!-- 删除模态框 -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-md" role="document">
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md">
             <div class="modal-content rounded shadow">
                 <div class="modal-header bg-light">
-                    <h4 class="modal-title" id="deleteModalLabel">确认删除</h4>
+                    <h4 class="modal-title">确认删除</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -182,107 +178,79 @@
     var DELETE_ID;
     var EDIT_ID;
 
+    // 初始化绑定所有事件
     $(function () {
-        bindBtnSaveEvent();
-        bindBtnDeleteEvent();
-        bindBtnConfirmDeleteEvent();
-        bindBtnEditEvent();
+        $("#btnSave").on("click", doSave);
+        $(".btn-delete").on("click", showDeleteModal);
+        $("#btnConfirmDelete").on("click", doDelete);
+        $(".btn-edit").on("click", showEditModal);
     });
 
-    // 绑定“保存”按钮事件（仅保留编辑功能）
-    function bindBtnSaveEvent() {
-        $("#btnSave").click(function () {
-            $(".error-msg").empty();
-            if (EDIT_ID) {
-                doEdit();
-            }
-        });
-    }
-
-    // 编辑请求
-    function doEdit() {
-        $.ajax({
-            url: "/movie/edit/?uid=" + EDIT_ID,
-            type: "post",
-            data: $("#formAdd").serialize(),
-            dataType: "JSON",
-            success: function (res) {
-                if (res.status) {
-                    $("#formAdd")[0].reset();
-                    $("#myModal").modal('hide');
-                    location.reload();
-                } else {
-                    if (res.tips) {
-                        alert(res.tips);
-                    } else {
-                        $.each(res.error, function (name, errorList) {
-                            $("#id_" + name).next().text(errorList[0]);
-                        });
-                    }
-                }
-            }
-        });
-    }
-
-    // 绑定“删除”按钮事件
-    function bindBtnDeleteEvent() {
-        $(".btn-delete").click(function () {
-            DELETE_ID = $(this).attr("id");
-            $("#deleteModal").modal('show');
-        });
-    }
-
-    // 绑定“确认删除”按钮事件
-    function bindBtnConfirmDeleteEvent() {
-        $("#btnConfirmDelete").click(function () {
+    // 编辑保存核心逻辑
+    function doSave() {
+        $(".error-msg").empty();
+        if (EDIT_ID) {
             $.ajax({
-                url: "/movie/delete/",
-                type: "GET",
-                data: {
-                    uid: DELETE_ID
-                },
-                dataType: "JSON",
+                url: "/movie/edit/?uid=" + EDIT_ID,
+                type: "post",
+                data: $("#formAdd").serialize(),
                 success: function (res) {
                     if (res.status) {
-                        $("#deleteModal").modal('hide');
+                        $("#formAdd")[0].reset();
+                        $("#myModal").modal('hide');
                         location.reload();
                     } else {
-                        alert(res.error);
+                        res.tips ? alert(res.tips) : $.each(res.error, (name, err) => {
+                            $("#id_" + name).next().text(err[0]);
+                        });
                     }
                 }
             });
+        }
+    }
+
+    // 显示编辑模态框并填充数据
+    function showEditModal() {
+        $("#formAdd")[0].reset();
+        $(".error-msg").empty();
+        EDIT_ID = $(this).data("uid");
+
+        $.ajax({
+            url: "/movie/detail/",
+            type: "get",
+            data: { uid: EDIT_ID },
+            success: function (res) {
+                if (res.status) {
+                    $.each(res.data, (name, value) => {
+                        $("#id_" + name).val(value);
+                    });
+                    $("#myModal").modal('show');
+                } else {
+                    alert(res.error);
+                }
+            }
         });
     }
 
-    // 绑定“编辑”按钮事件
-    function bindBtnEditEvent() {
-        $(".btn-edit").click(function () {
-            $("#formAdd")[0].reset();
-            $(".error-msg").empty();
-            var uid = $(this).attr("id");
-            EDIT_ID = uid;
+    // 显示删除确认模态框
+    function showDeleteModal() {
+        DELETE_ID = $(this).data("uid");
+        $("#deleteModal").modal('show');
+    }
 
-            // 请求影片详情数据
-            $.ajax({
-                url: "/movie/detail/",
-                type: "get",
-                data: {
-                    uid: uid
-                },
-                dataType: "JSON",
-                success: function (res) {
-                    if (res.status) {
-                        // 填充表单数据
-                        $.each(res.data, function (name, value) {
-                            $("#id_" + name).val(value);
-                        });
-                        $("#myModalLabel").text("编辑影片");
-                        $("#myModal").modal('show');
-                    } else {
-                        alert(res.error);
-                    }
+    function doDelete() {
+        $.ajax({
+            url: "/movie/delete/",
+            type: "GET",
+            data: { uid: DELETE_ID },
+            success: function (res) {
+                if (res.status) {
+                    $("#deleteModal").modal('hide');
+                    location.reload();
+                } else {
+                    alert(res.error);
                 }
-            });
+            }
         });
     }
 </script>

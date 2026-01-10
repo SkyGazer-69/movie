@@ -19,7 +19,6 @@
             <h5 class="sub-title text-center">推荐</h5>
             <div class="row justify-content-center">
                 {% for obj in data_list %}
-                    {# 判断海报是否有效（非空且格式合法），无效则跳过显示 #}
                     {% if obj.poster and obj.poster.strip %}
                         <div class="col-lg-3 col-md-3 item mt-2">
                             <div class="container mt-3">
