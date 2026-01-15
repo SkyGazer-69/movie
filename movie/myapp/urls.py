@@ -1,4 +1,5 @@
 from django.urls import path, re_path
+
 from . import views
 
 urlpatterns = [
@@ -14,14 +15,13 @@ urlpatterns = [
     path('collect/', views.collect, name='collect'),
     path('comment/add/', views.comment_add, name='comment_add'),
     path('recommend/', views.recommend),
-    path('center/', views.center, name='user_center'),  # 人中心入口
+    path('center/', views.center, name='user_center'),
     path('board/add/', views.board_add),
 
     path('search_suggest/', views.search_suggest, name='search_suggest'),
     path('result/', views.search_result, name='search_result'),
 
     # 管理员路由
-    path('admin_index/', views.admin_index),
     path('movie/', views.movie),
     path('movie/add/', views.movie_add),
     path('movie/delete/', views.movie_delete),
@@ -30,10 +30,9 @@ urlpatterns = [
     path('users/', views.users),
     path('users/delete/', views.users_delete),
     path('users/reset/', views.users_reset),
+    path('admin_index/', views.admin_index, name='admin_index'),
 
-    # 功能路由（个人信息更新、密码修改）
+    # 功能路由
     path('user/profile/update/', views.update_profile, name='update_profile'),
     path('user/password/update/', views.update_password, name='update_password'),
-
-
 ]

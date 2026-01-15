@@ -1,51 +1,74 @@
 {% extends 'admin_layout.html' %}
-{% block title %}首页{% endblock %}
-{% block extra_css %}
-{% endblock %}
+{% block title %}数据看板{% endblock %}
 
 {% block main-container %}
-    <div class="container-fluid pt-4 px-4">
-        <div class="row g-4">
-            <div class="col-sm-6 col-xl-3">
-                <div class="card rounded p-4 shadow">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <i class="fa fa-film fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2 text-muted">影片总数</p>
-                            <h6 class="mb-0 font-weight-bold">{{ movie_num }}</h6>
-                        </div>
-                    </div>
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-light rounded d-flex align-items-center justify-content-between p-4 shadow-sm">
+                <i class="fa fa-film fa-3x text-primary"></i>
+                <div class="ms-3">
+                    <p class="mb-2">影片总数</p>
+                    <h6 class="mb-0">{{ movie_num|default:"0" }} 部</h6>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card rounded p-4 shadow">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <i class="fa fa-comments fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2 text-muted">留言总数</p>
-                            <h6 class="mb-0 font-weight-bold">{{ board_num }}</h6>
-                        </div>
-                    </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-light rounded d-flex align-items-center justify-content-between p-4 shadow-sm">
+                <i class="fa fa-users fa-3x text-success"></i>
+                <div class="ms-3">
+                    <p class="mb-2">用户总数</p>
+                    <h6 class="mb-0">{{ user_num|default:"0" }} 人</h6>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card rounded p-4 shadow">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <i class="fa fa-users fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2 text-muted">总用户数</p>
-                            <h6 class="mb-0 font-weight-bold">{{ user_num }}</h6>
-                        </div>
-                    </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-light rounded d-flex align-items-center justify-content-between p-4 shadow-sm">
+                <i class="fa fa-heart fa-3x text-danger"></i>
+                <div class="ms-3">
+                    <p class="mb-2">收藏总数</p>
+                    <h6 class="mb-0">{{ collect_num|default:"0" }} 次</h6>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card rounded p-4 shadow">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <i class="fa fa-star fa-3x text-primary"></i>
-                        <div class="ms-3">
-                            <p class="mb-2 text-muted">评价总数</p>
-                            <h6 class="mb-0 font-weight-bold">{{ comment_num }}</h6>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-light rounded d-flex align-items-center justify-content-between p-4 shadow-sm">
+                <i class="fa fa-comment fa-3x text-warning"></i>
+                <div class="ms-3">
+                    <p class="mb-2">评价总数</p>
+                    <h6 class="mb-0">{{ comment_num|default:"0" }} 条</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据分析主区域 -->
+    <div class="row g-4 mb-4">
+        <!-- 影片分析 -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="fa fa-film me-2"></i>影片分析</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="text-muted mb-2">类型分布TOP10</h6>
+                            <div id="movie-type-chart" style="height: 400px;"></div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="text-muted mb-2">评分分布</h6>
+                            <div id="movie-score-chart" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="text-muted mb-2">地区分布TOP10</h6>
+                            <div id="movie-region-chart" style="height: 400px;"></div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="text-muted mb-2">近10年发布趋势</h6>
+                            <div id="movie-year-chart" style="height: 400px;"></div>
                         </div>
                     </div>
                 </div>
@@ -53,52 +76,94 @@
         </div>
     </div>
 
-    <!-- 评分分布图区域 -->
-    <div class="container-fluid pt-4 px-4">
-        <div class="card rounded shadow">
-            <div class="card-header">
-                <h5 class="mb-0">电影评分分布</h5>
+    <div class="row g-4 mb-4">
+        <!-- 收藏分析 -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0"><i class="fa fa-heart me-2"></i>收藏分析</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">收藏类型TOP10</h6>
+                        <div id="collect-type-chart" style="height: 300px;"></div>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">热门影片收藏TOP10</h6>
+                        <div id="collect-top-chart" style="height: 300px;"></div>
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">收藏月度趋势</h6>
+                        <div id="collect-monthly-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div id="score-chart" style="width: 100%; height: 400px;"></div>
+        </div>
+
+        <!-- 用户分析 -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0"><i class="fa fa-users me-2"></i>用户分析</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <h6 class="text-muted mb-2">性别分布</h6>
+                            <div id="user-sex-chart" style="height: 250px;"></div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <h6 class="text-muted mb-2">年龄分布</h6>
+                            <div id="user-age-chart" style="height: 250px;"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <h6 class="text-muted mb-2">注册月度趋势</h6>
+                            <div id="user-reg-chart" style="height: 250px;"></div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <h6 class="text-muted mb-2">用户活跃度</h6>
+                            <div id="user-active-chart" style="height: 250px;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    {% block extra_js %}
-    <script src="/static/echarts/echarts.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof echarts === 'undefined') {
-                alert('ECharts 加载失败');
-                return;
-            }
+    <div class="row g-4 mb-4">
+        <!-- 评价分析 -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-white py-3">
+                    <h5 class="mb-0"><i class="fa fa-star me-2"></i>评价分析</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 mb-4">
+                            <h6 class="text-muted mb-2">评价评分分布</h6>
+                            <div id="comment-score-chart" style="height: 300px;"></div>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <h6 class="text-muted mb-2">评价月度趋势</h6>
+                            <div id="comment-monthly-chart" style="height: 300px;"></div>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <h6 class="text-muted mb-2">评价字数分布</h6>
+                            <div id="comment-length-chart" style="height: 300px;"></div>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <h6 class="text-muted mb-2">活跃用户TOP10</h6>
+                            <div id="comment-user-chart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-            var myChart = echarts.init(document.getElementById('score-chart'));
-            var scoreData = {{ score_distribution|safe }};
-
-            var option = {
-                title: { text: '电影评分分布', left: 'center' },
-                tooltip: { trigger: 'axis', formatter: '{b}分：{c}部电影' },
-                grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
-                xAxis: {
-                    type: 'category',
-                    data: ['0-1', '1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10']
-                },
-                yAxis: { type: 'value', name: '电影数量', min: 0 },
-                series: [{
-                    type: 'bar',
-                    data: scoreData,
-                    itemStyle: { color: '#409EFF' },
-                    label: { show: true, position: 'top' }
-                }]
-            };
-
-            myChart.setOption(option);
-            window.addEventListener('resize', function() {
-                myChart.resize();
-            });
-        });
-    </script>
-    {% endblock %}
+<!-- 数据存储 -->
+<script id="chart-data" type="application/json">{{ chart_data_json|safe }}</script>
 {% endblock %}

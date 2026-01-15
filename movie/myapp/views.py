@@ -1,6 +1,6 @@
 from board import Board
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.shortcuts import render, redirect
 from django import forms
 from django.contrib.auth import authenticate, login, logout
@@ -8,14 +8,13 @@ from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.contrib import messages
 from .models import *
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from django.core.exceptions import ValidationError
 from myapp.pagination import Pagination
 import json
 from django.views.decorators.csrf import csrf_exempt
-# 新增导入（用于装饰器）
 from functools import wraps
-
+from django.utils import timezone as dj_timezone
 
 def superuser_required(view_func):
     @wraps(view_func)
@@ -435,34 +434,7 @@ def board_add(request):
         Board.objects.create(board_message=board_mes, board_user=request.user.username, board_ID=board_ID)
         messages.success(request, '留言成功')
         return HttpResponseRedirect('/center/')
-
-
-@superuser_required
-def admin_index(request):
-    time = datetime.now()
-    movie_num = Movie.objects.values('movie_ID', 'name').distinct().count()
-    board_num = Board.objects.count()
-    user_num = UserInfo.objects.count()
-    comment_num = Comment.objects.count()
-
-    score_distribution = []
-    for i in range(10):
-        start = i
-        end = i + 1
-        count = Movie.objects.filter(
-            movie_score__gte=start,
-            movie_score__lt=end
-        ).count()
-        score_distribution.append(count)
-
-    context = {
-        "movie_num": movie_num,
-        "board_num": board_num,
-        "user_num": user_num,
-        "comment_num": comment_num,
-        "score_distribution": score_distribution,
-    }
-    return render(request, 'admin_index.html', context)
+#
 
 
 # 电影模型表单类，用于电影的添加/编辑
@@ -721,3 +693,297 @@ def update_password(request):
             return JsonResponse({'success': False, 'message': f'修改失败：{str(e)}'})
 
     return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
+
+
+
+@superuser_required
+def admin_index(request):
+    # 基础统计数据
+    movie_num = Movie.objects.values('movie_ID', 'name').distinct().count()
+    user_num = UserInfo.objects.count()
+    comment_num = Comment.objects.count()
+    collect_num = Collect.objects.count()
+
+    # 评分分布统计
+    score_distribution = []
+    for i in range(10):
+        count = Movie.objects.filter(movie_score__gte=i, movie_score__lt=i + 1).count()
+        score_distribution.append(count)
+
+    # 1. 影片分析
+    # 1.1 类型分布
+    movie_type_data = {}
+    for movie in Movie.objects.exclude(type="无").exclude(type=""):
+        types = movie.type.split(',')
+        for t in types:
+            t = t.strip()
+            if t:
+                movie_type_data[t] = movie_type_data.get(t, 0) + 1
+    top_types = sorted(movie_type_data.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # 1.2 评分分布（饼图）
+    score_ranges = [
+        ('9-10分', 9, 10),
+        ('8-9分', 8, 9),
+        ('7-8分', 7, 8),
+        ('6-7分', 6, 7),
+        ('5-6分', 5, 6),
+        ('3-5分', 3, 5),
+        ('1-3分', 1, 3)
+    ]
+    movie_score_pie = []
+    for label, start, end in score_ranges:
+        count = Movie.objects.filter(
+            movie_score__gte=start,
+            movie_score__lt=end
+        ).count()
+        if count > 0:
+            movie_score_pie.append({"name": label, "value": count})
+
+    # 1.3 地区分布
+    region_data = {}
+    for movie in Movie.objects.exclude(region="无").exclude(region=""):
+        regions = movie.region.split(',')
+        for r in regions:
+            r = r.strip()
+            if r:
+                region_data[r] = region_data.get(r, 0) + 1
+    top_regions = sorted(region_data.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # 1.4 年份趋势
+    current_year = datetime.now().year
+    yearly_movies = []
+    for year in range(current_year - 9, current_year + 1):
+        count = Movie.objects.filter(
+            moive_time__icontains=str(year)
+        ).count()
+        yearly_movies.append({
+            "year": str(year),
+            "count": count
+        })
+
+    # 2. 收藏分析
+    collect_type_data = {}
+    for collect in Collect.objects.select_related('movie_information'):
+        if collect.movie_information and collect.movie_information.type != "无" and collect.movie_information.type != "":
+            movie = collect.movie_information
+            types = movie.type.split(',')
+            for t in types:
+                t = t.strip()
+                if t:
+                    collect_type_data[t] = collect_type_data.get(t, 0) + 1
+    top_collect_types = sorted(collect_type_data.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # 2.2 热门影片TOP10（截取中文标题）
+    top_movies = Collect.objects.values('collect_movie').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+
+    # 截取中文标题，优先显示中文部分
+    processed_top_movies = []
+    for movie in top_movies:
+        movie_title = movie['collect_movie']
+        # 提取中文字符
+        chinese_chars = ''.join([char for char in movie_title if '\u4e00' <= char <= '\u9fff'])
+        if chinese_chars:
+            truncated_title = chinese_chars[:8] if len(chinese_chars) > 8 else chinese_chars
+        else:
+            truncated_title = movie_title[:8] if len(movie_title) > 8 else movie_title
+        processed_top_movies.append({
+            'collect_movie': truncated_title,
+            'count': movie['count']
+        })
+
+    # 2.3 收藏月度趋势
+    monthly_collects = []
+    for i in range(12):
+        start_date = dj_timezone.now() - timedelta(days=30 * i)
+        count = Collect.objects.filter(
+            movie_information__moive_time__icontains=start_date.strftime('%Y-%m')
+        ).count()
+        monthly_collects.append({
+            "month": start_date.strftime('%Y-%m'),
+            "count": count
+        })
+    monthly_collects.reverse()
+
+    # 3. 用户分析
+    user_sex_data = [
+        {"name": "男", "value": UserInfo.objects.filter(sex=1).count()},
+        {"name": "女", "value": UserInfo.objects.filter(sex=0).count()}
+    ]
+
+    # 3.2 年龄分布
+    age_labels = ['18岁以下', '18-25岁', '26-35岁', '36-45岁', '46-60岁', '60岁以上']
+    age_ranges = [(0, 18), (18, 25), (26, 35), (36, 45), (46, 60), (60, 150)]
+    user_age_data = []
+    for label, (start, end) in zip(age_labels, age_ranges):
+        count = UserInfo.objects.filter(
+            age__gte=start,
+            age__lt=end
+        ).count()
+        user_age_data.append({
+            "name": label,
+            "value": count
+        })
+
+    # 3.3 注册趋势
+    monthly_users = []
+    for i in range(12):
+        start_date = dj_timezone.now() - timedelta(days=30 * i)
+        end_date = dj_timezone.now() - timedelta(days=30 * (i + 1))
+        count = UserInfo.objects.filter(
+            registration__gte=end_date,
+            registration__lt=start_date
+        ).count()
+        monthly_users.append({
+            "month": start_date.strftime('%Y-%m'),
+            "count": count
+        })
+    monthly_users.reverse()
+
+    # 3.4 用户活跃度
+    now = dj_timezone.now()
+    user_active_data = [
+        {"name": '7天内', "value": UserInfo.objects.filter(last_login__gte=now - timedelta(days=7)).count()},
+        {"name": '30天内', "value": UserInfo.objects.filter(last_login__gte=now - timedelta(days=30)).count()},
+        {"name": '90天内', "value": UserInfo.objects.filter(last_login__gte=now - timedelta(days=90)).count()},
+        {"name": '超过90天', "value": UserInfo.objects.filter(last_login__lt=now - timedelta(days=90)).count()}
+    ]
+
+    # 4. 评价分析
+    comment_score_data = []
+    for i in range(11):
+        count = Comment.objects.filter(
+            comment_score__gte=i,
+            comment_score__lt=i + 1
+        ).count()
+        comment_score_data.append(count)
+
+    # 4.2 评价趋势
+    monthly_comments = []
+    for i in range(12):
+        start_date = dj_timezone.now() - timedelta(days=30 * i)
+        end_date = dj_timezone.now() - timedelta(days=30 * (i + 1))
+        count = Comment.objects.filter(
+            comment_time__gte=end_date,
+            comment_time__lt=start_date
+        ).count()
+        monthly_comments.append({
+            "month": start_date.strftime('%Y-%m'),
+            "count": count
+        })
+    monthly_comments.reverse()
+
+    # 4.3 评价字数分布
+    try:
+        from django.db.models.functions import Length
+        word_ranges = [
+            ('0-50字', 0, 50),
+            ('50-100字', 50, 100),
+            ('100-200字', 100, 200),
+            ('200字以上', 200, 999999)
+        ]
+        comment_length_data = []
+        for label, start, end in word_ranges:
+            count = Comment.objects.annotate(
+                text_len=Length('discussion')
+            ).filter(
+                text_len__gte=start,
+                text_len__lt=end
+            ).count()
+            if count > 0:
+                comment_length_data.append({
+                    "name": label,
+                    "value": count
+                })
+    except:
+        comment_length_data = [
+            {"name": "0-50字", "value": sum(1 for c in Comment.objects.all() if len(c.discussion or '') < 50)},
+            {"name": "50-100字", "value": sum(1 for c in Comment.objects.all() if 50 <= len(c.discussion or '') < 100)},
+            {"name": "100-200字",
+             "value": sum(1 for c in Comment.objects.all() if 100 <= len(c.discussion or '') < 200)},
+            {"name": "200字以上", "value": sum(1 for c in Comment.objects.all() if len(c.discussion or '') >= 200)}
+        ]
+
+    # 4.4 活跃用户TOP10
+    top_active_users = Comment.objects.values('comment_user').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+
+    # 数据完整性保护
+    if not top_types:
+        top_types = [("暂无数据", 0)]
+    if not top_collect_types:
+        top_collect_types = [("暂无数据", 0)]
+    if not movie_score_pie:
+        movie_score_pie = [{"name": "暂无数据", "value": 1}]
+    if not comment_length_data:
+        comment_length_data = [{"name": "暂无数据", "value": 1}]
+
+    # 数据打包
+    context = {
+        "movie_num": movie_num,
+        "user_num": user_num,
+        "comment_num": comment_num,
+        "collect_num": collect_num,
+        "score_distribution": score_distribution,
+
+        # 图表数据
+        "chart_data_json": json.dumps({
+            "movie": {
+                "type_bar": {
+                    "labels": [t[0] for t in top_types],
+                    "values": [t[1] for t in top_types]
+                },
+                "score_pie": movie_score_pie,
+                "region_bar": {
+                    "labels": [r[0] for r in top_regions],
+                    "values": [r[1] for r in top_regions]
+                },
+                "year_line": {
+                    "labels": [y["year"] for y in yearly_movies],
+                    "values": [y["count"] for y in yearly_movies]
+                }
+            },
+            "collect": {
+                "type_line": {
+                    "labels": [t[0] for t in top_collect_types],
+                    "values": [t[1] for t in top_collect_types]
+                },
+                "top_movies": {
+                    "movies": [m['collect_movie'] for m in processed_top_movies],
+                    "values": [m['count'] for m in processed_top_movies]
+                },
+                "monthly_line": {
+                    "labels": [d["month"] for d in monthly_collects],
+                    "values": [d["count"] for d in monthly_collects]
+                }
+            },
+            "user": {
+                "sex_pie": user_sex_data,
+                "age_bar": user_age_data,
+                "reg_month_line": {
+                    "labels": [m["month"] for m in monthly_users],
+                    "values": [m["count"] for m in monthly_users]
+                },
+                "active_pie": user_active_data
+            },
+            "comment": {
+                "score_bar": comment_score_data,
+                "monthly_line": {
+                    "labels": [d["month"] for d in monthly_comments],
+                    "values": [d["count"] for d in monthly_comments]
+                },
+                "length_pie": comment_length_data,
+                "top_users": {
+                    "users": [str(u["comment_user"])[:8] for u in top_active_users],
+                    "values": [u["count"] for u in top_active_users]
+                }
+            }
+        }, ensure_ascii=False)
+    }
+    return render(request, 'admin_index.html', context)
+
+
+

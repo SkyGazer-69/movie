@@ -48,7 +48,6 @@ class UserBasedCF():
     # 计算用户之间的相似度
     def calc_user_sim(self):
         # 构建“电影-用户”倒排索引
-        # key = movieId, value = list of userIDs who have seen this movie
         print('Building movie-user table ...')
         movie_user = {}
         for user, movies in self.dataSet.items():
@@ -101,7 +100,7 @@ class UserBasedCF():
                 rank.setdefault(movie, 0)
                 rank[movie] += wuv
 
-        # 如果没有找到任何推荐电影（例如，相似用户看过的电影该用户都看过了），也返回热门电影
+        # 如果没有找到任何推荐电影，也返回热门电影
         if not rank:
             print(f"Warning: User {user} has no new movies to recommend. Returning popular movies.")
             return self.get_popular_movies(N)
