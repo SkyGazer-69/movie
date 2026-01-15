@@ -360,24 +360,70 @@ def comment_add(request):
         return redirect('/front_index')
 
 
+# def recommend(request):
+#     try:
+#         username = request.user
+#         userobj = UserInfo.objects.filter(username=username)
+#         for obj in userobj:
+#             userid = obj.user_ID
+#
+#         movie_information = Rec.objects.filter(user_id=userid)
+#         data_list = []
+#
+#         for movie in movie_information:
+#             data_list.append(Movie.objects.filter(movie_ID=movie.movie_id).first())
+#         return render(request, 'front_recommendation.html', {'data_list': data_list})
+#     except:
+#         return redirect('/front_index')
+
+
+# 个人中心视图
+# 在现有 views.py 文件中替换 recommend 函数
+
 def recommend(request):
-    try:
-        username = request.user
-        userobj = UserInfo.objects.filter(username=username)
-        for obj in userobj:
-            userid = obj.user_ID
+    """
+    个性化推荐视图
+    """
+    user = request.user
+    if not user.is_authenticated:
+        messages.error(request, '请先登录以查看个性化推荐！')
+        return redirect('/login/')
 
-        movie_information = Rec.objects.filter(user_id=userid)
-        data_list = []
+    # 获取用户信息
+    user_obj = UserInfo.objects.get(username=user.username)
+    user_id = user_obj.user_ID
 
-        for movie in movie_information:
-            data_list.append(Movie.objects.filter(movie_ID=movie.movie_id).first())
-        return render(request, 'front_recommendation.html', {'data_list': data_list})
-    except:
-        return redirect('/front_index')
+    # 从 Rec 表获取推荐电影
+    rec_movies = Rec.objects.filter(user_id=user_id).order_by('-rating')[:10]
+    recommended_movies = []
+
+    for rec in rec_movies:
+        try:
+            # 添加异常处理，防止Movie.DoesNotExist
+            movie = Movie.objects.get(movie_ID=rec.movie_id)
+            recommended_movies.append(movie)
+        except Movie.DoesNotExist:
+            # 如果推荐的电影不存在，跳过该推荐
+            continue
+
+    # 如果推荐电影不足，补充热门电影
+    if len(recommended_movies) < 10:
+        hot_movies = Movie.objects.order_by('-movie_score', '-moive_time')
+        for movie in hot_movies:
+            if movie not in recommended_movies and len(recommended_movies) < 10:
+                recommended_movies.append(movie)
+
+    if not recommended_movies:
+        # 如果仍然没有电影，返回首页
+        messages.info(request, '暂时没有可推荐的电影')
+        return redirect('/front_index/')
+
+    return render(request, 'front_recommendation.html', {
+        'data_list': recommended_movies,
+        'recommendation_source': 'personalized' if len(rec_movies) > 0 else 'popular'
+    })
 
 
-# 唯一个人中心视图（整合原profile逻辑，支持个人信息编辑、密码修改、收藏/评论展示）
 @login_required
 def center(request):
     try:

@@ -16,33 +16,52 @@
 
     <section class="w3l-courses py-5" id="courses">
         <div class="container pb-lg-5 pb-md-4 pb-2">
-            <h5 class="sub-title text-center">推荐</h5>
+            <h5 class="sub-title text-center mb-4">为您推荐的影片</h5>
+
+            {% if recommendation_source %}
+            <div class="text-center mb-4">
+                <span class="badge badge-info">
+                    {% if recommendation_source == 'personalized' %}
+                        基于您的观影历史推荐
+                    {% elif recommendation_source == 'popular' %}
+                        热门影片推荐
+                    {% else %}
+                        精选影片推荐
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+
             <div class="row justify-content-center">
-                {% for obj in data_list %}
-                    {% if obj.poster and obj.poster.strip %}
-                        <div class="col-lg-3 col-md-3 item mt-2">
-                            <div class="container mt-3">
-                                <div class="card">
-                                    <a href="/movie/{{ obj.movie_ID }}/details/">
-                                        <img class="card-img-top" src="{{ obj.poster }}" alt="Card image"
-                                             style="height: 330px;">
-                                    </a>
-                                    <div class="card-body">
-                                        <h4 class="card-title">{{ obj.name }}</h4>
-                                        <div class="rating">
-                                            <i class="fa fa-star star" aria-hidden="true"></i>
-                                            <i class="fa fa-star star" aria-hidden="true"></i>
-                                            <i class="fa fa-star star" aria-hidden="true"></i>
-                                            <i class="fa fa-star star" aria-hidden="true"></i>
-                                            <i class="fa fa-star-half-o star" aria-hidden="true"></i>
-                                            <span>{{ obj.movie_score }}/10</span>
+                {% if data_list %}
+                    {% for obj in data_list %}
+                        {% if obj.poster and obj.poster.strip %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 item mt-2">
+                                <div class="container mt-3">
+                                    <div class="card">
+                                        <a href="/movie/{{ obj.movie_ID }}/details/">
+                                            <img class="card-img-top" src="{{ obj.poster }}"
+                                                 alt="{{ obj.name }}" style="height: 330px; object-fit: cover;">
+                                        </a>
+                                        <div class="card-body">
+                                            <h4 class="card-title" style="font-size: 1rem;">{{ obj.name }}</h4>
+                                            <div class="rating">
+                                                <i class="fa fa-star star" aria-hidden="true"></i>
+                                                <span>{{ obj.movie_score }}/10</span>
+                                            </div>
+                                            <small class="text-muted">{{ obj.type }}</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    {% endif %}
-                {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center">
+                        <p>暂无推荐影片，稍后再试</p>
+                        <a href="/depot/" class="btn btn-primary">浏览影片库</a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </section>
