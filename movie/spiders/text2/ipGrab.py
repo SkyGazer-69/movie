@@ -167,7 +167,7 @@ def main():
         t.join()
 
     # 3. 保存结果到文件（覆盖原有内容）
-    with open('ipdaili.txt', 'w', encoding='utf-8') as f:
+    with open('../ipdaili.txt', 'w', encoding='utf-8') as f:
         for proxy in all_proxies:
             f.write(f"{proxy}\n")
 

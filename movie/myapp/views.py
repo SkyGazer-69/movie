@@ -52,9 +52,7 @@ class LoginForm(forms.Form):
 
 def login_user(request):
     if request.method == "GET":
-        # GET 请求渲染登录页
         return render(request, 'login.html')
-
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -64,15 +62,16 @@ def login_user(request):
             if user:
                 login(request, user)
                 request.session.set_expiry(None)
-                next_url = request.GET.get('next', '/front_index/')  # 默认为首页
-                return redirect(next_url)
+                if user.is_superuser:
+                    return redirect('/admin_index/')
+                else:
+                    next_url = request.GET.get('next', '/front_index/')
+                    return redirect(next_url)
             else:
                 messages.error(request, '用户不存在或密码错误!')
                 return redirect('/login/')
         else:
-            # 表单验证失败，返回错误并渲染登录页
             return render(request, 'login.html', {'form': form})
-    # 其他请求方法（如PUT/DELETE）返回405
     return HttpResponse(status=405)
 
 
@@ -360,36 +359,13 @@ def comment_add(request):
         return redirect('/front_index')
 
 
-# def recommend(request):
-#     try:
-#         username = request.user
-#         userobj = UserInfo.objects.filter(username=username)
-#         for obj in userobj:
-#             userid = obj.user_ID
-#
-#         movie_information = Rec.objects.filter(user_id=userid)
-#         data_list = []
-#
-#         for movie in movie_information:
-#             data_list.append(Movie.objects.filter(movie_ID=movie.movie_id).first())
-#         return render(request, 'front_recommendation.html', {'data_list': data_list})
-#     except:
-#         return redirect('/front_index')
-
-
-# 个人中心视图
-# 在现有 views.py 文件中替换 recommend 函数
-
 def recommend(request):
-    """
-    个性化推荐视图
-    """
+
     user = request.user
     if not user.is_authenticated:
         messages.error(request, '请先登录以查看个性化推荐！')
         return redirect('/login/')
 
-    # 获取用户信息
     user_obj = UserInfo.objects.get(username=user.username)
     user_id = user_obj.user_ID
 
@@ -414,7 +390,6 @@ def recommend(request):
                 recommended_movies.append(movie)
 
     if not recommended_movies:
-        # 如果仍然没有电影，返回首页
         messages.info(request, '暂时没有可推荐的电影')
         return redirect('/front_index/')
 
@@ -522,14 +497,13 @@ def movie(request):
 
 
 # 电影添加
-@superuser_required
-@csrf_exempt
 def movie_add(request):
-    # 用POST数据初始化表单
     form = MovieModelForm(data=request.POST)
     if form.is_valid():
-        # 自动生成movie_ID
-        form.instance.movie_ID = datetime.now().strftime("%Y%m%d%H%M%S") + str(form.instance.min)
+        # 生成电影ID
+        timestamp = datetime.now().strftime("%m%d%H%M")
+        random_suffix = str(random.randint(10, 99))
+        form.instance.movie_ID = (timestamp + random_suffix)[:32]
         form.save()
         return JsonResponse({"status": True})
     return JsonResponse({"status": False, "error": form.errors})
@@ -546,7 +520,7 @@ def movie_delete(request):
 
     # 删除对应的电影数据
     Movie.objects.filter(movie_ID=uid).delete()
-    return JsonResponse({"status": True})  # 返回成功响应
+    return JsonResponse({"status": True})
 
 
 # 电影详情
@@ -674,7 +648,6 @@ def search_suggest(request):
     return JsonResponse(suggestions, safe=False)
 
 
-# 显示所有匹配电影
 def search_result(request):
     keyword = request.GET.get("search", "")
     if not keyword:

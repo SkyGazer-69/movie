@@ -46,9 +46,12 @@
         <div class="col-12">
             <div class="card rounded shadow">
                 <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 font-weight-bold">影片管理</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 font-weight-bold">影片管理</h5>
+
+                    </div>
                 </div>
-                <div class="card-body p-4">
+ <div class="card-body p-4">
                     <!-- 搜索区域 -->
                     <div class="search-bar d-flex flex-wrap align-items-center justify-content-between">
                         <form class="d-flex me-3" method="get">
@@ -59,6 +62,9 @@
                                 <i class="fa fa-search me-1"></i>
                             </button>
                         </form>
+                        <button type="button" class="btn btn-success btn-add">
+                            <i class="fa fa-plus me-1"></i> 添加影片
+                        </button>
                     </div>
 
                     <!-- 表格区域 -->
@@ -126,7 +132,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content rounded shadow">
                 <div class="modal-header bg-light">
-                    <h4 class="modal-title">编辑影片</h4>
+                    <h4 class="modal-title"><span id="modalTitle">编辑影片</span></h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -184,14 +190,51 @@
         $(".btn-delete").on("click", showDeleteModal);
         $("#btnConfirmDelete").on("click", doDelete);
         $(".btn-edit").on("click", showEditModal);
+        // 添加新建按钮事件
+        $(".btn-add").on("click", showAddModal);
     });
+
+    // 添加新建模态框显示函数
+    function showAddModal() {
+        $("#formAdd")[0].reset();
+        $(".error-msg").empty();
+        EDIT_ID = null;
+        $("#modalTitle").text("添加影片");
+        $("#myModal").modal('show');
+    }
 
     // 编辑保存核心逻辑
     function doSave() {
         $(".error-msg").empty();
+
+        // 检查海报链接是否为空，如果为空则设置默认值
+        var posterInput = $("#id_poster");
+        if (!posterInput.val().trim()) {
+            posterInput.val("/static/img/wt.jpg");
+        }
+
         if (EDIT_ID) {
+            // 编辑模式
             $.ajax({
                 url: "/movie/edit/?uid=" + EDIT_ID,
+                type: "post",
+                data: $("#formAdd").serialize(),
+                success: function (res) {
+                    if (res.status) {
+                        $("#formAdd")[0].reset();
+                        $("#myModal").modal('hide');
+                        location.reload();
+                    } else {
+                        res.tips ? alert(res.tips) : $.each(res.error, (name, err) => {
+                            $("#id_" + name).next().text(err[0]);
+                        });
+                    }
+                }
+            });
+        } else {
+            // 添加模式
+            $.ajax({
+                url: "/movie/add/",
                 type: "post",
                 data: $("#formAdd").serialize(),
                 success: function (res) {
@@ -214,6 +257,7 @@
         $("#formAdd")[0].reset();
         $(".error-msg").empty();
         EDIT_ID = $(this).data("uid");
+        $("#modalTitle").text("编辑影片");
 
         $.ajax({
             url: "/movie/detail/",
