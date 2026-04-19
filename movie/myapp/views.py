@@ -15,6 +15,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from django.utils import timezone as dj_timezone
+from django.views.decorators.cache import cache_page
 
 def superuser_required(view_func):
     @wraps(view_func)
@@ -152,35 +153,27 @@ def front_index(request):
     queryset_high = Movie.objects.order_by('-movie_score', 'movie_ID')[:8]
     return render(request, 'front_index.html', {"queryset_hot": queryset_hot, "queryset_high": queryset_high})
 
-
+@cache_page(60 * 120)
 def rank(request):
     queryset_high = Movie.objects.order_by('-moive_time')[:10]
-    queryset_action = Movie.objects.filter(type__contains="动作")[:10]
-    queryset_comedy = Movie.objects.filter(type__contains="喜剧")[:10]
-    queryset_love = Movie.objects.filter(type__contains="爱情")[:10]
-    queryset_scienceFiction = Movie.objects.filter(type__contains="科幻")[:10]
-    queryset_terror = Movie.objects.filter(type__contains="恐怖")[:10]
-    queryset_plot = Movie.objects.filter(type__contains="剧情")[:10]
-    queryset_war = Movie.objects.filter(type__contains="战争")[:10]
-    queryset_crime = Movie.objects.filter(type__contains="犯罪")[:10]
-    queryset_thriller = Movie.objects.filter(type__contains="惊悚")[:10]
-    queryset_cartoon = Movie.objects.filter(type__contains="动画")[:10]
-    queryset_history = Movie.objects.filter(type__contains="历史")[:10]
 
-    context = {
-        "queryset_high": queryset_high,
-        "queryset_action": queryset_action,
-        "queryset_comedy": queryset_comedy,
-        "queryset_love": queryset_love,
-        "queryset_scienceFiction": queryset_scienceFiction,
-        "queryset_terror": queryset_terror,
-        "queryset_plot": queryset_plot,
-        "queryset_war": queryset_war,
-        "queryset_crime": queryset_crime,
-        "queryset_thriller": queryset_thriller,
-        "queryset_cartoon": queryset_cartoon,
-        "queryset_history": queryset_history,
+    type_filters = {
+        "queryset_action": "动作",
+        "queryset_comedy": "喜剧",
+        "queryset_love": "爱情",
+        "queryset_scienceFiction": "科幻",
+        "queryset_terror": "恐怖",
+        "queryset_plot": "剧情",
+        "queryset_war": "战争",
+        "queryset_crime": "犯罪",
+        "queryset_thriller": "惊悚",
+        "queryset_cartoon": "动画",
+        "queryset_history": "历史"
     }
+
+    context = {"queryset_high": queryset_high}
+    for key, type_name in type_filters.items():
+        context[key] = Movie.objects.filter(type__contains=type_name)[:10]
 
     return render(request, 'front_rank.html', context)
 
@@ -193,26 +186,22 @@ def depot(request, *args, **kwargs):
             'depot_time_ID': '0',
         }
 
-    # 从kwargs中取出对应的id
     type_ID = kwargs.get('depot_type_ID')
     region_ID = kwargs.get('depot_region_ID')
     time_ID = kwargs.get('depot_time_ID')
 
-    # 类型列表
     type_list = [
         {"ID": "1", "type": "动作"}, {"ID": "2", "type": "喜剧"}, {"ID": "3", "type": "爱情"},
         {"ID": "4", "type": "科幻"}, {"ID": "5", "type": "恐怖"}, {"ID": "6", "type": "剧情"},
         {"ID": "7", "type": "战争"}, {"ID": "8", "type": "犯罪"}, {"ID": "9", "type": "惊悚"},
         {"ID": "10", "type": "冒险"}, {"ID": "11", "type": "悬疑"}, {"ID": "12", "type": "武侠"},
         {"ID": "13", "type": "奇幻"}, {"ID": "14", "type": "动画"}, {"ID": "15", "type": "历史"}]
-    # 地区列表
     region_list = [
         {"ID": "1", "region": "大陆"}, {"ID": "2", "region": "香港"}, {"ID": "3", "region": "台湾"},
         {"ID": "4", "region": "美国"}, {"ID": "5", "region": "法国"}, {"ID": "6", "region": "英国"},
         {"ID": "7", "region": "日本"}, {"ID": "8", "region": "韩国"}, {"ID": "9", "region": "德国"},
         {"ID": "10", "region": "泰国"}, {"ID": "11", "region": "印度"}, {"ID": "12", "region": "意大利"},
         {"ID": "13", "region": "西班牙"}, {"ID": "14", "region": "加拿大"}]
-    # 时间列表
     time_list = [
         {"ID": "1", "time": "2024"}, {"ID": "2", "time": "2023"}, {"ID": "3", "time": "2022"},
         {"ID": "4", "time": "2021"}, {"ID": "5", "time": "2020"}, {"ID": "6", "time": "2019"},
@@ -241,8 +230,40 @@ def depot(request, *args, **kwargs):
         time = time_list[time_int - 1].get("time")
         time_name = time_list[time_int - 1].get("time")
 
-    queryset = Movie.objects.filter(
-        Q(type__contains=type) & Q(region__contains=region) & Q(moive_time__contains=time))
+    filters = Q()
+    if type:
+        filters &= Q(type__contains=type)
+    if region:
+        filters &= Q(region__contains=region)
+    if time:
+        filters &= Q(moive_time__contains=time)
+
+    queryset = Movie.objects.filter(filters) if filters else Movie.objects.all()
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if is_ajax:
+        page = int(request.GET.get('page', 1))
+        page_size = 50
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        movies = queryset[start:end]
+        has_more = end < queryset.count()
+
+        movie_data = []
+        for obj in movies:
+            movie_data.append({
+                'movie_ID': obj.movie_ID,
+                'name': obj.name if obj.name else '未知影片',
+                'poster': obj.poster if obj.poster and obj.poster != '' else '/static/img/wt.jpg'
+            })
+
+        return JsonResponse({
+            'movies': movie_data,
+            'has_more': has_more,
+            'total': queryset.count()
+        })
 
     return render(
         request,
@@ -251,11 +272,13 @@ def depot(request, *args, **kwargs):
             'type_list': type_list,
             'region_list': region_list,
             'time_list': time_list,
-            'queryset': queryset,
+            'queryset': queryset[:50],
             'kwargs': kwargs,
             'type_name': type_name,
             'region_name': region_name,
-            'time_name': time_name
+            'time_name': time_name,
+            'total_count': queryset.count(),
+            'has_more': queryset.count() > 50
         }
     )
 
@@ -369,17 +392,15 @@ def recommend(request):
     user_obj = UserInfo.objects.get(username=user.username)
     user_id = user_obj.user_ID
 
-    # 从 Rec 表获取推荐电影
     rec_movies = Rec.objects.filter(user_id=user_id).order_by('-rating')[:10]
     recommended_movies = []
 
     for rec in rec_movies:
         try:
-            # 添加异常处理，防止Movie.DoesNotExist
+            # 添加异常处理
             movie = Movie.objects.get(movie_ID=rec.movie_id)
             recommended_movies.append(movie)
         except Movie.DoesNotExist:
-            # 如果推荐的电影不存在，跳过该推荐
             continue
 
     # 如果推荐电影不足，补充热门电影
@@ -409,7 +430,7 @@ def center(request):
         # 3. 查询用户收藏
         queryset_collect = Collect.objects.filter(collect_user=request.user.username)
 
-        # 评论分页处理（原有功能）
+        # 评论分页处理
         page_object = Pagination(request, queryset_comment)
         processed_page_queryset = []
         for comment in page_object.page_queryset:
@@ -673,7 +694,7 @@ def update_profile(request):
             user.nickname = nickname
             user.sex = int(sex) if sex and sex.isdigit() else None
             user.age = int(age) if age and age.isdigit() else None
-            user.save()  # 保存到数据库
+            user.save()
 
             messages.success(request, '个人信息更新成功！')
         except Exception as e:
@@ -713,34 +734,31 @@ def update_password(request):
 
     return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
 
-
-
+@cache_page(60 * 120)
 @superuser_required
 def admin_index(request):
-    # 基础统计数据
-    movie_num = Movie.objects.values('movie_ID', 'name').distinct().count()
+    from django.db.models import Count, Avg
+
+    movie_num = Movie.objects.count()
     user_num = UserInfo.objects.count()
     comment_num = Comment.objects.count()
     collect_num = Collect.objects.count()
 
-    # 评分分布统计
     score_distribution = []
     for i in range(10):
         count = Movie.objects.filter(movie_score__gte=i, movie_score__lt=i + 1).count()
         score_distribution.append(count)
 
-    # 1. 影片分析
-    # 1.1 类型分布
     movie_type_data = {}
-    for movie in Movie.objects.exclude(type="无").exclude(type=""):
-        types = movie.type.split(',')
+    all_movies = Movie.objects.exclude(type="无").exclude(type="").values_list('type', flat=True)
+    for type_str in all_movies:
+        types = type_str.split(',')
         for t in types:
             t = t.strip()
             if t:
                 movie_type_data[t] = movie_type_data.get(t, 0) + 1
     top_types = sorted(movie_type_data.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # 1.2 评分分布（饼图）
     score_ranges = [
         ('9-10分', 9, 10),
         ('8-9分', 8, 9),
@@ -759,50 +777,60 @@ def admin_index(request):
         if count > 0:
             movie_score_pie.append({"name": label, "value": count})
 
-    # 1.3 地区分布
     region_data = {}
-    for movie in Movie.objects.exclude(region="无").exclude(region=""):
-        regions = movie.region.split(',')
+    all_regions = Movie.objects.exclude(region="无").exclude(region="").values_list('region', flat=True)
+    for region_str in all_regions:
+        regions = region_str.split(',')
         for r in regions:
             r = r.strip()
             if r:
                 region_data[r] = region_data.get(r, 0) + 1
     top_regions = sorted(region_data.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # 1.4 年份趋势
     current_year = datetime.now().year
     yearly_movies = []
-    for year in range(current_year - 9, current_year + 1):
-        count = Movie.objects.filter(
-            moive_time__icontains=str(year)
-        ).count()
+    years_range = range(current_year - 9, current_year + 1)
+    year_counts = Movie.objects.filter(
+        moive_time__regex='|'.join([str(y) for y in years_range])
+    ).values('moive_time').annotate(count=Count('movie_ID'))
+
+    year_count_dict = {str(year): 0 for year in years_range}
+    for item in year_counts:
+        for year in years_range:
+            if str(year) in item['moive_time']:
+                year_count_dict[str(year)] += item['count']
+                break
+
+    for year in years_range:
         yearly_movies.append({
             "year": str(year),
-            "count": count
+            "count": year_count_dict.get(str(year), 0)
         })
 
-    # 2. 收藏分析
     collect_type_data = {}
-    for collect in Collect.objects.select_related('movie_information'):
-        if collect.movie_information and collect.movie_information.type != "无" and collect.movie_information.type != "":
-            movie = collect.movie_information
-            types = movie.type.split(',')
+    collect_with_movies = Collect.objects.select_related('movie_information').exclude(
+        movie_information__type="无"
+    ).exclude(
+        movie_information__type=""
+    ).values('movie_information__type')
+
+    for item in collect_with_movies:
+        type_str = item['movie_information__type']
+        if type_str:
+            types = type_str.split(',')
             for t in types:
                 t = t.strip()
                 if t:
                     collect_type_data[t] = collect_type_data.get(t, 0) + 1
     top_collect_types = sorted(collect_type_data.items(), key=lambda x: x[1], reverse=True)[:10]
 
-    # 2.2 热门影片TOP10（截取中文标题）
     top_movies = Collect.objects.values('collect_movie').annotate(
         count=Count('id')
     ).order_by('-count')[:10]
 
-    # 截取中文标题，优先显示中文部分
     processed_top_movies = []
     for movie in top_movies:
         movie_title = movie['collect_movie']
-        # 提取中文字符
         chinese_chars = ''.join([char for char in movie_title if '\u4e00' <= char <= '\u9fff'])
         if chinese_chars:
             truncated_title = chinese_chars[:8] if len(chinese_chars) > 8 else chinese_chars
@@ -813,26 +841,24 @@ def admin_index(request):
             'count': movie['count']
         })
 
-    # 2.3 收藏月度趋势
     monthly_collects = []
-    for i in range(12):
-        start_date = dj_timezone.now() - timedelta(days=30 * i)
+    now = dj_timezone.now()
+    for i in range(11, -1, -1):
+        target_date = now - timedelta(days=30 * i)
+        month_str = target_date.strftime('%Y-%m')
         count = Collect.objects.filter(
-            movie_information__moive_time__icontains=start_date.strftime('%Y-%m')
+            movie_information__moive_time__icontains=month_str
         ).count()
         monthly_collects.append({
-            "month": start_date.strftime('%Y-%m'),
+            "month": month_str,
             "count": count
         })
-    monthly_collects.reverse()
 
-    # 3. 用户分析
     user_sex_data = [
         {"name": "男", "value": UserInfo.objects.filter(sex=1).count()},
         {"name": "女", "value": UserInfo.objects.filter(sex=0).count()}
     ]
 
-    # 3.2 年龄分布
     age_labels = ['18岁以下', '18-25岁', '26-35岁', '36-45岁', '46-60岁', '60岁以上']
     age_ranges = [(0, 18), (18, 25), (26, 35), (36, 45), (46, 60), (60, 150)]
     user_age_data = []
@@ -846,11 +872,10 @@ def admin_index(request):
             "value": count
         })
 
-    # 3.3 注册趋势
     monthly_users = []
-    for i in range(12):
-        start_date = dj_timezone.now() - timedelta(days=30 * i)
-        end_date = dj_timezone.now() - timedelta(days=30 * (i + 1))
+    for i in range(11, -1, -1):
+        start_date = now - timedelta(days=30 * i)
+        end_date = now - timedelta(days=30 * (i + 1))
         count = UserInfo.objects.filter(
             registration__gte=end_date,
             registration__lt=start_date
@@ -859,10 +884,7 @@ def admin_index(request):
             "month": start_date.strftime('%Y-%m'),
             "count": count
         })
-    monthly_users.reverse()
 
-    # 3.4 用户活跃度
-    now = dj_timezone.now()
     user_active_data = [
         {"name": '7天内', "value": UserInfo.objects.filter(last_login__gte=now - timedelta(days=7)).count()},
         {"name": '30天内', "value": UserInfo.objects.filter(last_login__gte=now - timedelta(days=30)).count()},
@@ -870,7 +892,6 @@ def admin_index(request):
         {"name": '超过90天', "value": UserInfo.objects.filter(last_login__lt=now - timedelta(days=90)).count()}
     ]
 
-    # 4. 评价分析
     comment_score_data = []
     for i in range(11):
         count = Comment.objects.filter(
@@ -879,11 +900,10 @@ def admin_index(request):
         ).count()
         comment_score_data.append(count)
 
-    # 4.2 评价趋势
     monthly_comments = []
-    for i in range(12):
-        start_date = dj_timezone.now() - timedelta(days=30 * i)
-        end_date = dj_timezone.now() - timedelta(days=30 * (i + 1))
+    for i in range(11, -1, -1):
+        start_date = now - timedelta(days=30 * i)
+        end_date = now - timedelta(days=30 * (i + 1))
         count = Comment.objects.filter(
             comment_time__gte=end_date,
             comment_time__lt=start_date
@@ -892,9 +912,7 @@ def admin_index(request):
             "month": start_date.strftime('%Y-%m'),
             "count": count
         })
-    monthly_comments.reverse()
 
-    # 4.3 评价字数分布
     try:
         from django.db.models.functions import Length
         word_ranges = [
@@ -918,19 +936,13 @@ def admin_index(request):
                 })
     except:
         comment_length_data = [
-            {"name": "0-50字", "value": sum(1 for c in Comment.objects.all() if len(c.discussion or '') < 50)},
-            {"name": "50-100字", "value": sum(1 for c in Comment.objects.all() if 50 <= len(c.discussion or '') < 100)},
-            {"name": "100-200字",
-             "value": sum(1 for c in Comment.objects.all() if 100 <= len(c.discussion or '') < 200)},
-            {"name": "200字以上", "value": sum(1 for c in Comment.objects.all() if len(c.discussion or '') >= 200)}
+            {"name": "0-50字", "value": Comment.objects.filter(discussion__isnull=False).exclude(discussion='').count()},
         ]
 
-    # 4.4 活跃用户TOP10
     top_active_users = Comment.objects.values('comment_user').annotate(
         count=Count('id')
     ).order_by('-count')[:10]
 
-    # 数据完整性保护
     if not top_types:
         top_types = [("暂无数据", 0)]
     if not top_collect_types:
@@ -940,7 +952,6 @@ def admin_index(request):
     if not comment_length_data:
         comment_length_data = [{"name": "暂无数据", "value": 1}]
 
-    # 数据打包
     context = {
         "movie_num": movie_num,
         "user_num": user_num,
@@ -948,7 +959,6 @@ def admin_index(request):
         "collect_num": collect_num,
         "score_distribution": score_distribution,
 
-        # 图表数据
         "chart_data_json": json.dumps({
             "movie": {
                 "type_bar": {
@@ -1003,6 +1013,7 @@ def admin_index(request):
         }, ensure_ascii=False)
     }
     return render(request, 'admin_index.html', context)
+
 
 
 

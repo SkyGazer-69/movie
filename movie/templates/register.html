@@ -309,62 +309,10 @@
             <div class="switch_container" id="switch-c1">
                 <h2 class="switch_title title" style="letter-spacing: 0;">欢迎回来！</h2>
                 <p class="switch_description description">已经有账号了嘛，去登入账号来进入电影世界吧！！！</p>
-                <button class="switch_button button switch-btn"><a href="/login/" style="color: white; text-decoration: none;">登录</a></button>
+                <a href="/login/" class="button switch-btn" style="display: inline-block; text-align: center; line-height: 50px; color: white; text-decoration: none;">登录</a>
             </div>
         </div>
     </div>
-{#    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>#}
-{#    <script>#}
-{#        function sub() {#}
-{#            if(nameCheck() && emailCheck() && pwdCheck() && pwdSure()){#}
-{#                alert('提交成功');#}
-{#            }else{#}
-{#                alert('你的输入有误，请按要求输入后再提交');#}
-{#            }#}
-{#        }#}
-{#        function nameCheck() {#}
-{#            let reg = /^((?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,18}|)$/;#}
-{#            let name = $("#name").val();#}
-{#            if (!reg.test(name) || name=='') {#}
-{#                $(".name").html("<span class='red'>请输入6~18位由数字和英文字母组成的账户名</span>");#}
-{#                return false;#}
-{#            }else{#}
-{#                $(".name").text('√');#}
-{#                return true;#}
-{#            }#}
-{#        }#}
-{#        function emailCheck(str) {#}
-{#            let reg = /^\w{3,12}@\w{1,5}\.[a-z]{2,3}$/;#}
-{#            let email = $("#email").val();#}
-{#            if(!reg.test(email) || email==''){#}
-{#                $(".email").html("<span class='red'>请输入正确的邮箱</span>")#}
-{#                return false;#}
-{#            }else{#}
-{#                $(".email").text('√');#}
-{#                return true;#}
-{#            }#}
-{#        }#}
-{#        function pwdCheck(str) {#}
-{#            let reg = /^[\s\S]{6,18}/;#}
-{#            let pwd = $("#pwd").val();#}
-{#            if(!reg.test(pwd) || pwd==''){#}
-{#                $(".pwd").html("<span class='red'>请输入6-12位密码</span>")#}
-{#                return false;#}
-{#            }else{#}
-{#                $(".pwd").text('√');#}
-{#                return true;#}
-{#            }#}
-{#        }#}
-{#        function pwdSure() {#}
-{#            if ($("#pwd").val() === $("#pwd1").val()) {#}
-{#                $(".pwd").text('√');#}
-{#                return true;#}
-{#            } else {#}
-{#                $(".pwd1").html("<span class='red'>两次密码输入不一致</span>")#}
-{#                return false;#}
-{#            }#}
-{#        }#}
-{#    </script>#}
 </body>
 
 </html>

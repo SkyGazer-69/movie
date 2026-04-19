@@ -5,7 +5,6 @@
 
 {% block main-container %}
     <style>
-        /* 筛选按钮样式优化 */
         .filter-btn {
             text-decoration: none;
             padding: 6px 12px;
@@ -26,7 +25,6 @@
             background-color: #f0f0f0;
         }
 
-        /* 影片卡片样式优化 */
         .movie-card {
             border: 1px solid #eee;
             border-radius: 6px;
@@ -54,6 +52,24 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .loading-more.show {
+            display: block;
+        }
+        .no-more {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            display: none;
+        }
+        .no-more.show {
+            display: block;
+        }
     </style>
 
     <section class="inner-banner py-5">
@@ -70,9 +86,7 @@
 
     <section class="w3l-courses py-5" id="courses">
         <div class="container pb-lg-5 pb-md-4 pb-2">
-            <!-- 筛选区域 -->
             <div class="mb-4">
-                <!-- 类型筛选 -->
                 <div class="d-flex flex-wrap mb-3">
                     <a href="/depot-0-{{ kwargs.depot_region_ID }}-{{ kwargs.depot_time_ID }}"
                        class="filter-btn {% if kwargs.depot_type_ID == '0' %}active{% endif %}">
@@ -86,7 +100,6 @@
                     {% endfor %}
                 </div>
 
-                <!-- 地区筛选 -->
                 <div class="d-flex flex-wrap mb-3">
                     <a href="/depot-{{ kwargs.depot_type_ID }}-0-{{ kwargs.depot_time_ID }}"
                        class="filter-btn {% if kwargs.depot_region_ID == '0' %}active{% endif %}">
@@ -100,7 +113,6 @@
                     {% endfor %}
                 </div>
 
-                <!-- 时间筛选 -->
                 <div class="d-flex flex-wrap mb-3">
                     <a href="/depot-{{ kwargs.depot_type_ID }}-{{ kwargs.depot_region_ID }}-0"
                        class="filter-btn {% if kwargs.depot_time_ID == '0' %}active{% endif %}">
@@ -115,26 +127,22 @@
                 </div>
             </div>
 
-            <!-- 筛选条件展示 -->
             <div class="mb-4">
                 <h4 class="text-center">您现在筛选的因素为：类型：{{ type_name }}
                     出品地区：{{ region_name }} 出品年份：{{ time_name }}</h4>
             </div>
 
-            <!-- 影片列表 -->
-            <div class="row">
+            <div class="row" id="movie-list">
                 {% for obj in queryset %}
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                         <div class="movie-card">
                             <a href="/movie/{{ obj.movie_ID }}/details/">
                                 {% if obj.poster and obj.poster != "" %}
-                                    <!-- 初始图片，加载失败时触发替换 -->
                                     <img class="card-img-top"
                                          src="{{ obj.poster }}"
                                          alt="影片海报"
                                          onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
                                 {% else %}
-                                    <!-- 无海报时直接使用缺省图 -->
                                     <img class="card-img-top"
                                          src="/static/img/wt.jpg"
                                          alt="暂无海报">
@@ -151,6 +159,14 @@
                     </div>
                 {% endfor %}
             </div>
+
+            <div class="loading-more" id="loading-more">
+                <p>加载中...</p>
+            </div>
+
+            <div class="no-more" id="no-more">
+                <p>没有更多影片了</p>
+            </div>
         </div>
     </section>
 
@@ -162,5 +178,92 @@
                 target.alt = '图片加载失败';
             }
         }, true);
+
+        let currentPage = 2;
+        let isLoading = false;
+        let hasMore = {{ has_more|yesno:"true,false" }};
+
+        const loadingEl = document.getElementById('loading-more');
+        const noMoreEl = document.getElementById('no-more');
+        const movieListEl = document.getElementById('movie-list');
+
+        if (!loadingEl || !noMoreEl || !movieListEl) {
+            console.error('DOM元素未找到');
+        }
+
+        window.addEventListener('scroll', function() {
+            if (!hasMore || isLoading || !loadingEl) return;
+
+            const scrollHeight = document.documentElement.scrollHeight;
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const clientHeight = document.documentElement.clientHeight;
+
+            if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                loadMoreMovies();
+            }
+        });
+
+        function loadMoreMovies() {
+            if (!loadingEl || !noMoreEl || !movieListEl) return;
+
+            isLoading = true;
+            loadingEl.classList.add('show');
+
+            let apiUrl = window.location.pathname + '?page=' + currentPage;
+
+            fetch(apiUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingEl.classList.remove('show');
+
+                if (data.movies && data.movies.length > 0) {
+                    data.movies.forEach(movie => {
+                        const col = document.createElement('div');
+                        col.className = 'col-lg-2 col-md-3 col-sm-4 col-6';
+
+                        const posterSrc = movie.poster || '/static/img/wt.jpg';
+
+                        col.innerHTML = `
+                            <div class="movie-card">
+                                <a href="/movie/${movie.movie_ID}/details/">
+                                    <img class="card-img-top"
+                                         src="${posterSrc}"
+                                         alt="影片海报"
+                                         onError="this.src='/static/img/wt.jpg'; this.alt='图片加载失败'">
+                                </a>
+                                <div class="card-body">
+                                    <p class="card-title">${movie.name}</p>
+                                </div>
+                            </div>
+                        `;
+
+                        movieListEl.appendChild(col);
+                    });
+
+                    currentPage++;
+                    hasMore = data.has_more;
+
+                    if (!hasMore && noMoreEl) {
+                        noMoreEl.classList.add('show');
+                    }
+                } else {
+                    hasMore = false;
+                    if (noMoreEl) {
+                        noMoreEl.classList.add('show');
+                    }
+                }
+
+                isLoading = false;
+            })
+            .catch(error => {
+                console.error('加载失败:', error);
+                loadingEl.classList.remove('show');
+                isLoading = false;
+            });
+        }
     </script>
 {% endblock %}
