@@ -89,7 +89,7 @@ class Rec(models.Model):
     movie_id = models.IntegerField(null=False,verbose_name="影片id", db_index=True)
     rating = models.FloatField(null=False,verbose_name="推荐度")
 
-class Collect(models.Model):
+class  Board (models.Model):
     board_ID = models.CharField(max_length=32, unique=True, verbose_name="留言ID")
     board_time = models.DateTimeField(auto_now_add=True, verbose_name="留言时间")
     board_message = models.CharField(max_length=256, verbose_name="留言内容")
