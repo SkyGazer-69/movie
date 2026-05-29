@@ -35,4 +35,6 @@ urlpatterns = [
     # 功能路由
     path('user/profile/update/', views.update_profile, name='update_profile'),
     path('user/password/update/', views.update_password, name='update_password'),
+    path('user/comment/delete/', views.delete_comment, name='delete_comment'),
+    path('user/avatar/update/', views.update_avatar, name='update_avatar'),
 ]

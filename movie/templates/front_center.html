@@ -1,514 +1,890 @@
 {% extends "front_layout.html" %}
 {% load static %}
-{% block title %}个人中心{% endblock %}
+{% block title %} - 个人中心{% endblock %}
 {% block main-container %}
     <style>
-        /* 统一卡片布局样式 */
-        .profile-card-container {
-            padding: 10px;
+ .profile-page .inner-banner {
+            background: url("{% static 'assets/images/bg2.jpg' %}") no-repeat center;
+            background-size: cover;
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            -ms-background-size: cover;
+            position: relative;
+            z-index: 1;
+            min-height: 180px;
         }
-        .profile-card {
+
+        .profile-page .inner-banner::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 100%;
             height: 100%;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+            left: 0;
+        }
+
+        .profile-page .breadcrumb-section {
+            padding: 120px 0 40px;
+            text-align: center;
+        }
+
+        .profile-page .profile-main {
+            padding: 40px 0 60px;
+            background: #f8f9fa;
+            min-height: calc(100vh - 300px);
+        }
+
+        .profile-page .profile-wrapper {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 991px) {
+            .profile-page .profile-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-page .sidebar-nav {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .profile-page .sidebar-profile {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .profile-page .sidebar-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #667eea;
+            margin: 0 auto 12px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .profile-page .sidebar-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .profile-page .sidebar-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-page .sidebar-level {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: #fff;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        .profile-page .sidebar-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .profile-page .stat-box {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .profile-page .stat-num {
+            font-size: 22px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .profile-page .stat-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 3px;
+        }
+
+        .profile-page .nav-menu {
+            padding: 10px 0;
+        }
+
+        .profile-page .nav-item-custom {
+            padding: 12px 20px;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            border-left: 3px solid transparent;
+        }
+
+        .profile-page .nav-item-custom:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .profile-page .nav-item-custom.active {
+            background: #f8f9fa;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .profile-page .nav-item-custom i {
+            width: 20px;
+            margin-right: 10px;
+        }
+
+        .profile-page .content-area {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .profile-page .content-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .profile-page .content-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+
+        .profile-page .section-content {
+            display: none;
+        }
+
+        .profile-page .section-content.active {
+            display: block;
+        }
+
+        .profile-page .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .profile-page .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .profile-page .info-label {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .profile-page .info-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .profile-page .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .profile-page .btn-custom {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .profile-page .btn-primary-custom {
+            background: #667eea;
+            color: #fff;
+        }
+
+        .profile-page .btn-primary-custom:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .profile-page .btn-secondary-custom {
+            background: #fff;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .profile-page .btn-secondary-custom:hover {
+            background: #f8f9fa;
+        }
+
+        .profile-page .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .profile-page .movie-item {
+            background: #fff;
             border-radius: 8px;
             overflow: hidden;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .profile-card:hover {
+
+        .profile-page .movie-item:hover {
             transform: translateY(-5px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
-        /* 统一图片样式 */
-        .profile-img {
+
+        .profile-page .movie-poster {
             width: 100%;
+            height: 220px;
             object-fit: cover;
         }
-        /* 文字省略处理 */
-        .text-truncate {
+
+        .profile-page .movie-info {
+            padding: 12px;
+        }
+
+        .profile-page .movie-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 6px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* 评论卡片样式 */
-        .comment-card-body {
-            min-height: 120px;
+
+        .profile-page .movie-score {
+            font-size: 13px;
+            color: #ffc107;
         }
-        /* 表单样式优化 */
-        .form-group {
-            margin-bottom: 1.2rem;
+
+        .profile-page .comment-item {
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 3px solid #667eea;
         }
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            display: block;
+
+        .profile-page .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-page .comment-movie {
+            font-weight: 600;
             color: #333;
         }
-        .form-control {
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            padding: 0.6rem 0.75rem;
-            width: 100%;
-            font-size: 1rem;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+        .profile-page .comment-content {
+            color: #495057;
+            line-height: 1.6;
+            margin-bottom: 10px;
         }
-        .form-control:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+
+        .profile-page .comment-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .btn-custom {
-            background-color: #007bff;
+
+        .profile-page .btn-delete {
+            background: #dc3545;
             color: #fff;
             border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.375rem;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            font-size: 1rem;
+            font-size: 13px;
         }
-        .btn-custom:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
+
+        .profile-page .btn-delete:hover {
+            background: #c82333;
         }
-        .btn-custom-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.9rem;
+
+        .profile-page .load-more {
+            text-align: center;
+            margin-top: 25px;
         }
-        .tab-content {
-            margin-top: 1rem;
-            padding: 1.5rem;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .nav-tabs {
-            margin-bottom: 0;
-            border-bottom: 1px solid #dee2e6;
-        }
-        .nav-tabs .nav-link {
-            color: #666;
-            border: 1px solid transparent;
-            border-top-left-radius: 0.375rem;
-            border-top-right-radius: 0.375rem;
-            padding: 0.75rem 1.25rem;
-            font-size: 1.05rem;
-            margin-bottom: -1px;
-        }
-        .nav-tabs .nav-link.active {
-            color: #007bff;
-            background-color: #fff;
-            border-color: #dee2e6 #dee2e6 #fff;
-            font-weight: 500;
-        }
-        .form-text {
+
+        .profile-page .empty-state {
+            text-align: center;
+            padding: 60px 20px;
             color: #6c757d;
-            font-size: 0.9rem;
-            margin-top: 0.3rem;
         }
-        .card-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            padding: 1rem 1.25rem;
-            font-size: 1.1rem;
+
+        .profile-page .empty-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            color: #667eea;
         }
-        .card-body {
-            padding: 1.25rem;
+
+        .profile-page .avatar-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
         }
-        /* 错误提示样式 */
-        .error-message {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            display: none;
+
+        .profile-page .avatar-option {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
         }
-        /* 编辑区域默认隐藏 */
-        .edit-section {
-            display: none;
+
+        .profile-page .avatar-option:hover,
+        .profile-page .avatar-option.selected {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        .profile-page .quick-links {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .profile-page .quick-link {
+            display: block;
+            padding: 10px 15px;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .profile-page .quick-link:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .profile-page .quick-link i {
+            margin-right: 8px;
+            width: 18px;
         }
     </style>
 
-    <section class="inner-banner py-5">
-        <div class="w3l-breadcrumb py-lg-5">
-            <div class="container pt-5 pb-sm-4 pb-2">
-                <h4 class="inner-text-title font-weight-bold pt-5">个人中心</h4>
-                <ul class="breadcrumbs-custom-path">
-                    <li><a href="/front_index/">首页</a></li>
-                    <li class="active"><i class="fas fa-angle-right mx-2"></i>个人中心</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-
-    <section class="w3l-courses py-2" id="courses">
-        <div class="container pb-lg-5 pb-md-4 pb-2">
-            <!-- 用户信息和留言板 -->
-            <div class="row">
-                <!-- 用户信息卡片 -->
-                <div class="col-lg-6 profile-card-container">
-                    <div class="card profile-card mb-3" style="max-width: 540px;">
-                        {% if queryset_user %}
-                            <div class="row g-0">
-                                <div class="col-md-4">
-                                    <img src="{% static 'assets/images/c1.jpg' %}" alt="用户头像" class="profile-img w-100" style="height: 180px;">
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ queryset_user.username }}</h5>
-                                        <p class="card-text text-muted">
-                                          电影是浓缩的人生，观影是一场心灵的远行。愿永远保有对故事的期待，在光影中找到属于自己的答案。
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- 留言板卡片 -->
-                <div class="col-lg-6 profile-card-container">
-                    <div class="card profile-card mb-3">
-                        <div class="card-body">
-                            <h2 class="card-title">留言</h2>
-                            <h5 class="card-subtitle mb-3 text-muted">请留下您宝贵的意见</h5>
-                            {% if messages %}
-                                {% for mes in messages %}
-                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                        {{ mes.message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                            <form method="get" action="/board/add/">
-                                <div class="form-floating">
-                                    <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea" style="height: 120px;" name="boardMessage" required></textarea>
-                                    <label for="floatingTextarea">留言内容</label>
-                                </div>
-                                <button class="btn btn-custom mt-3" type="submit">提交留言</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 个人信息编辑与密码修改标签页 -->
-            <div class="row mt-4">
-                <div class="col-lg-12">
-                    <ul class="nav nav-tabs" id="myTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">个人信息</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false">密码管理</button>
-                        </li>
+    <div class="profile-page">
+        <section class="inner-banner">
+            <div class="breadcrumb-section">
+                <div class="container">
+                    <h2 style="color: #fff; font-size: 28px; margin-bottom: 10px;">个人中心</h2>
+                    <ul class="list-inline" style="color: rgba(255,255,255,0.8); margin: 0;">
+                        <li class="list-inline-item"><a href="/front_index/" style="color: rgba(255,255,255,0.8); text-decoration: none;">首页</a></li>
+                        <li class="list-inline-item"><i class="fas fa-angle-right mx-2"></i>个人中心</li>
                     </ul>
-                    <div class="tab-content" id="myTabContent">
-                        <!-- 个人信息：默认显示按钮，点击后显示编辑表单 -->
-                        <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                            <div class="card profile-card mb-3">
-                                <div class="card-header">
-                                    <h4>个人信息</h4>
-                                    <!-- 编辑按钮 -->
-                                    <button class="btn btn-custom btn-custom-sm float-end" id="showProfileEdit">编辑个人信息</button>
-                                </div>
-                                <div class="card-body">
-                                    <!-- 信息展示区 -->
-                                    <div id="profileDisplay">
-                                        <p><strong>用户昵称：</strong> {{ queryset_user.nickname|default:"未设置" }}</p>
-                                        <p><strong>性别：</strong> {% if queryset_user.sex == 1 %}男{% elif queryset_user.sex == 2 %}女{% else %}未设置{% endif %}</p>
-                                        <p><strong>年龄：</strong> {{ queryset_user.age|default:"未设置" }}</p>
-                                    </div>
-                                    <!-- 编辑表单区（默认隐藏） -->
-                                    <div class="edit-section" id="profileEditForm">
-                                        <form method="post" action="/user/profile/update/">
-                                            {% csrf_token %}
-                                            <div class="form-group">
-                                                <label class="form-label" for="nickname">用户昵称</label>
-                                                <input type="text" class="form-control" id="nickname" name="nickname" value="{{ queryset_user.nickname|default:'' }}" required placeholder="请输入昵称">
-                                            </div>
-                                            <div class="form-group">
-                                                <label class="form-label" for="sex">性别</label>
-                                                <select class="form-control" id="sex" name="sex" required>
-                                                    <option value="" disabled {% if not queryset_user.sex %}selected{% endif %}>请选择性别</option>
-                                                    <option value="1" {% if queryset_user.sex == 1 %}selected{% endif %}>男</option>
-                                                    <option value="2" {% if queryset_user.sex == 2 %}selected{% endif %}>女</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label class="form-label" for="age">年龄</label>
-                                                <input type="number" class="form-control" id="age" name="age" value="{{ queryset_user.age|default:'' }}" min="0" max="120" placeholder="请输入年龄（0-120）">
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-custom">保存个人信息</button>
-                                                <button type="button" class="btn btn-secondary" id="cancelProfileEdit">取消</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 密码管理：默认显示按钮，点击后显示修改表单 -->
-                        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
-                            <div class="card profile-card mb-3">
-                                <div class="card-header">
-                                    <h4>密码管理</h4>
-                                    <!-- 修改按钮 -->
-                                    <button class="btn btn-custom btn-custom-sm float-end" id="showPasswordEdit">修改密码</button>
-                                </div>
-                                <div class="card-body">
-                                    <!-- 提示区 -->
-                                    <div id="passwordDisplay">
-                                        <p class="text-muted">点击“修改密码”按钮，验证邮箱后可更新密码</p>
-                                    </div>
-                                    <!-- 密码修改表单区（默认隐藏） -->
-                                    <div class="edit-section" id="passwordEditForm">
-                                        <!-- 后端提示信息显示 -->
-                                        {% if messages %}
-                                            {% for mes in messages %}
-                                                <div class="alert alert-{% if mes.tags == 'success' %}success{% else %}danger{% endif %} alert-dismissible fade show" role="alert">
-                                                    {{ mes.message }}
-                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                                </div>
-                                            {% endfor %}
-                                        {% endif %}
-
-                                        <form method="post" action="/user/password/update/" id="passwordForm">
-                                            {% csrf_token %}
-                                            <!-- 1. 邮箱输入区域 -->
-                                            <div class="form-group">
-                                                <label class="form-label" for="email">绑定邮箱</label>
-                                                <input type="email" class="form-control" id="email" name="email" placeholder="请输入您的账号绑定邮箱" required>
-                                                <span id="emailError" class="error-message">输入的邮箱与账号绑定邮箱不一致</span>
-                                                <small class="form-text text-muted">请输入您注册时使用的邮箱</small>
-                                            </div>
-
-                                            <!-- 2. 验证按钮 -->
-                                            <div class="form-group mb-4">
-                                                <button type="button" class="btn btn-custom" id="verifyEmailBtn">验证邮箱</button>
-                                            </div>
-
-                                            <!-- 3. 密码修改区域（初始隐藏） -->
-                                            <div id="passwordFormSection" style="display: none;">
-                                                <div class="form-group">
-                                                    <label class="form-label" for="new_password">新密码</label>
-                                                    <input type="password" class="form-control" id="new_password" name="new_password" placeholder="请输入新密码（至少6位）" required minlength="6">
-                                                    <span id="passwordLengthError" class="error-message">密码长度不能少于6位</span>
-                                                </div>
-
-                                                <div class="form-group">
-                                                    <label class="form-label" for="confirm_password">确认新密码</label>
-                                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="请再次输入新密码" required>
-                                                    <span id="passwordMismatchError" class="error-message">两次输入的密码不一致</span>
-                                                </div>
-                                            </div>
-
-                                            <!-- 操作按钮 -->
-                                            <div class="d-flex gap-2 mt-2">
-                                                <button type="submit" class="btn btn-custom" id="submitBtn" style="display: none;">确认修改密码</button>
-                                                <button type="button" class="btn btn-secondary" id="cancelPasswordEdit">取消</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
+        </section>
 
-            <!-- 收藏记录 -->
-            <div class="row mt-4">
-                <div class="col-lg-12">
-                    <div class="card mb-3 profile-card">
-                        <div class="card-header"><h4>收藏记录</h4></div>
-                        {% if queryset_collect %}
-                            <div class="row p-3">
-                                {% for obj in queryset_collect %}
-                                    <div class="col-lg-2 col-md-3 col-sm-4 profile-card-container">
-                                        <div class="card profile-card">
-                                            <a href="/movie/{{ obj.movie_information.movie_ID }}/details/">
-                                                {% if obj.movie_information.poster and obj.movie_information.poster != "" %}
-                                                    <img class="card-img-top profile-img" src="{{ obj.movie_information.poster }}" alt="{{ obj.movie_information.name }}" style="height: 220px;">
-                                                {% else %}
-                                                    <img class="card-img-top profile-img" src="/static/img/wt.jpg" alt="暂无海报" style="height: 220px;">
-                                                {% endif %}
-                                            </a>
-                                            <div class="card-body p-2">
-                                                <h6 class="card-title text-truncate" title="{{ obj.movie_information.name }}">{{ obj.movie_information.name }}</h6>
-                                                <p class="card-text text-sm text-muted">
-                                                    评分：{{ obj.movie_information.movie_score|default:"暂无" }}
-                                                </p>
+        <section class="profile-main">
+            <div class="container">
+                <div class="profile-wrapper">
+                    <div class="sidebar-nav">
+                        <div class="sidebar-profile">
+                            <img src="{% static 'assets/images/ab.jpg' %}" alt="头像" class="sidebar-avatar" id="currentAvatar" data-bs-toggle="modal" data-bs-target="#avatarModal">
+                            {% if queryset_user %}
+                            <div class="sidebar-name">{{ queryset_user.username }}</div>
+                            <span class="sidebar-level">{{ account_level }}会员</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="sidebar-stats">
+                            <div class="stat-box">
+                                <div class="stat-num">{{ collect_count }}</div>
+                                <div class="stat-text">收藏</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-num">{{ comment_count }}</div>
+                                <div class="stat-text">评论</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-num">{{ account_level }}</div>
+                                <div class="stat-text">等级</div>
+                            </div>
+                        </div>
+
+                        <div class="nav-menu">
+                            <div class="nav-item-custom active" onclick="switchSection('overview')">
+                                <i class="fas fa-home"></i>概览
+                            </div>
+                            <div class="nav-item-custom" onclick="switchSection('collects')">
+                                <i class="fas fa-heart"></i>我的收藏
+                            </div>
+                            <div class="nav-item-custom" onclick="switchSection('comments')">
+                                <i class="fas fa-comment"></i>我的评论
+                            </div>
+                            <div class="nav-item-custom" onclick="switchSection('settings')">
+                                <i class="fas fa-cog"></i>账号设置
+                            </div>
+                        </div>
+
+                        <div class="quick-links" style="padding: 0 15px 15px;">
+                            <a href="/recommend/" class="quick-link">
+                                <i class="fas fa-thumbs-up"></i>个性化推荐
+                            </a>
+                            <a href="/rank/" class="quick-link">
+                                <i class="fas fa-trophy"></i>电影排行榜
+                            </a>
+                            <a href="/depot/" class="quick-link">
+                                <i class="fas fa-film"></i>全部电影
+                            </a>
+                            <a href="/logout/" class="quick-link" style="color: #dc3545;">
+                                <i class="fas fa-sign-out-alt"></i>退出登录
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="content-area">
+                        <div id="section-overview" class="section-content active">
+                            <div class="content-header">
+                                <h3 class="content-title">个人信息</h3>
+                            </div>
+
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <div class="info-label">昵称</div>
+                                    <div class="info-value">{{ queryset_user.nickname|default:"未设置" }}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-label">性别</div>
+                                    <div class="info-value">
+                                        {% if queryset_user.sex == 1 %}男
+                                        {% elif queryset_user.sex == 0 %}女
+                                        {% else %}未设置{% endif %}
+                                    </div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-label">年龄</div>
+                                    <div class="info-value">{{ queryset_user.age|default:"未设置" }}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-label">邮箱</div>
+                                    <div class="info-value">{{ queryset_user.email }}</div>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                    <i class="fas fa-edit me-2"></i>编辑资料
+                                </button>
+                                <button class="btn-custom btn-secondary-custom" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                    <i class="fas fa-key me-2"></i>修改密码
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="section-collects" class="section-content">
+                            <div class="content-header">
+                                <h3 class="content-title">我的收藏</h3>
+                            </div>
+                            <div id="collects-container" class="movie-grid">
+                                {% if queryset_collect %}
+                                    {% for obj in queryset_collect|slice:":10" %}
+                                    <div class="movie-item">
+                                        <a href="/movie/{{ obj.movie_information.movie_ID }}/details/">
+                                            {% if obj.movie_information.poster and obj.movie_information.poster != "" %}
+                                                <img class="movie-poster" src="{{ obj.movie_information.poster }}" alt="{{ obj.movie_information.name }}">
+                                            {% else %}
+                                                <img class="movie-poster" src="/static/img/wt.jpg" alt="暂无海报">
+                                            {% endif %}
+                                        </a>
+                                        <div class="movie-info">
+                                            <div class="movie-title" title="{{ obj.movie_information.name }}">{{ obj.movie_information.name }}</div>
+                                            <div class="movie-score">
+                                                <i class="fas fa-star me-1"></i>{{ obj.movie_information.movie_score|default:"暂无" }}
                                             </div>
                                         </div>
                                     </div>
-                                {% endfor %}
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="empty-state" style="grid-column: 1/-1;">
+                                        <div class="empty-icon"><i class="fas fa-heart-broken"></i></div>
+                                        <h5>暂无收藏</h5>
+                                        <p>快去发现喜欢的电影吧～</p>
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% else %}
-                            <div class="card-body">
-                                <h4 class="text-center text-muted py-5">暂无收藏内容，快去收藏喜欢的电影吧～</h4>
+                            {% if collect_count > 10 %}
+                            <div class="load-more">
+                                <button class="btn-custom btn-secondary-custom" onclick="loadMoreCollects()">加载更多</button>
                             </div>
-                        {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <div id="section-comments" class="section-content">
+                            <div class="content-header">
+                                <h3 class="content-title">我的评论</h3>
+                            </div>
+                            <div id="comments-container">
+                                {% if queryset %}
+                                    {% for item in queryset|slice:":10" %}
+                                    <div class="comment-item">
+                                        <div class="comment-header">
+                                            <div>
+                                                <span class="comment-movie">{{ item.obj.movie }}</span>
+                                                <span class="ms-3" style="color: #6c757d; font-size: 13px;">{{ item.comment_date }}</span>
+                                            </div>
+                                            <button class="btn-delete" onclick="deleteComment('{{ item.obj.comment_ID }}')">
+                                                <i class="fas fa-trash me-1"></i>删除
+                                            </button>
+                                        </div>
+                                        <div class="comment-content">{{ item.obj.discussion }}</div>
+                                        <div class="comment-footer">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-star me-1"></i>{{ item.obj.comment_score }}分
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="empty-state">
+                                        <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
+                                        <h5>暂无评论</h5>
+                                        <p>去电影详情页留下你的看法吧～</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% if comment_count > 10 %}
+                            <div class="load-more">
+                                <button class="btn-custom btn-secondary-custom" onclick="loadMoreComments()">加载更多</button>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div id="section-settings" class="section-content">
+                            <div class="content-header">
+                                <h3 class="content-title">账号设置</h3>
+                            </div>
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <div class="info-label">用户名</div>
+                                    <div class="info-value">{{ queryset_user.username }}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-label">邮箱</div>
+                                    <div class="info-value">{{ queryset_user.email }}</div>
+                                </div>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                    <i class="fas fa-user-edit me-2"></i>编辑个人资料
+                                </button>
+                                <button class="btn-custom btn-primary-custom" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                    <i class="fas fa-key me-2"></i>修改密码
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
-    <!-- 交互JS -->
+    <div class="modal fade" id="avatarModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-image me-2"></i>选择头像</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="avatar-options">
+                        <img src="{% static 'assets/images/ab.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'ab.jpg')">
+                        <img src="{% static 'assets/images/c1.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c1.jpg')">
+                        <img src="{% static 'assets/images/c2.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c2.jpg')">
+                        <img src="{% static 'assets/images/c3.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c3.jpg')">
+                        <img src="{% static 'assets/images/c4.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c4.jpg')">
+                        <img src="{% static 'assets/images/c5.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c5.jpg')">
+                        <img src="{% static 'assets/images/c6.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c6.jpg')">
+                        <img src="{% static 'assets/images/c7.jpg' %}" class="avatar-option" onclick="selectAvatar(this, 'c7.jpg')">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-custom btn-secondary-custom" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn-custom btn-primary-custom" onclick="saveAvatar()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>编辑个人资料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="/user/profile/update/">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">昵称</label>
+                            <input type="text" class="form-control" name="nickname" value="{{ queryset_user.nickname|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">性别</label>
+                            <select class="form-control" name="sex" required>
+                                <option value="" disabled {% if not queryset_user.sex %}selected{% endif %}>请选择</option>
+                                <option value="1" {% if queryset_user.sex == 1 %}selected{% endif %}>男</option>
+                                <option value="0" {% if queryset_user.sex == 0 %}selected{% endif %}>女</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">年龄</label>
+                            <input type="number" class="form-control" name="age" value="{{ queryset_user.age|default:'' }}" min="0" max="120">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-custom btn-secondary-custom" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn-custom btn-primary-custom">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key me-2"></i>修改密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="passwordForm">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">原密码</label>
+                            <input type="password" class="form-control" id="old_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">新密码</label>
+                            <input type="password" class="form-control" id="new_password" minlength="6" required>
+                            <small class="text-muted">至少6个字符</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">确认新密码</label>
+                            <input type="password" class="form-control" id="confirm_password" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-custom btn-secondary-custom" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn-custom btn-primary-custom">确认修改</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 图片加载失败处理
+        let currentPage = 1;
+        let currentCollectPage = 1;
+        let selectedAvatarSrc = '';
+
+        function switchSection(sectionName) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item-custom').forEach(el => el.classList.remove('active'));
+            document.getElementById('section-' + sectionName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function selectAvatar(img, filename) {
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            img.classList.add('selected');
+            selectedAvatarSrc = filename;
+        }
+
+        function saveAvatar() {
+            if (!selectedAvatarSrc) {
+                alert('请先选择一个头像');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('avatar', selectedAvatarSrc);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            fetch('/user/avatar/update/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('currentAvatar').src = '/static/assets/images/' + selectedAvatarSrc;
+                    alert('头像更新成功！');
+                    bootstrap.Modal.getInstance(document.getElementById('avatarModal')).hide();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => alert('更新失败，请稍后再试'));
+        }
+
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('old_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            if (newPassword !== confirmPassword) {
+                alert('两次输入的密码不一致！');
+                return;
+            }
+            if (newPassword.length < 6) {
+                alert('新密码长度不能少于6位！');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('old_password', oldPassword);
+            formData.append('new_password', newPassword);
+            formData.append('confirm_password', confirmPassword);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            fetch('/user/password/update/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = data.login_url;
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => alert('网络错误，请稍后再试'));
+        });
+
+        function deleteComment(commentId) {
+            if (!confirm('确定要删除这条评论吗？')) return;
+            const formData = new FormData();
+            formData.append('comment_id', commentId);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            fetch('/user/comment/delete/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) location.reload();
+            })
+            .catch(error => alert('删除失败，请稍后再试'));
+        }
+
+        function loadMoreComments() {
+            currentPage++;
+            fetch('/center/?ajax=1&type=comments&page=' + currentPage)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    const container = document.getElementById('comments-container');
+                    data.data.forEach(comment => {
+                        const html = `
+                            <div class="comment-item">
+                                <div class="comment-header">
+                                    <div>
+                                        <span class="comment-movie">${comment.movie}</span>
+                                        <span class="ms-3" style="color: #6c757d; font-size: 13px;">${comment.comment_date}</span>
+                                    </div>
+                                    <button class="btn-delete" onclick="deleteComment('${comment.comment_ID}')">
+                                        <i class="fas fa-trash me-1"></i>删除
+                                    </button>
+                                </div>
+                                <div class="comment-content">${comment.discussion}</div>
+                                <div class="comment-footer">
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-star me-1"></i>${comment.comment_score}分
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', html);
+                    });
+                    if (!data.has_more) {
+                        document.querySelector('#section-comments .load-more').style.display = 'none';
+                    }
+                } else {
+                    document.querySelector('#section-comments .load-more').style.display = 'none';
+                }
+            });
+        }
+
+        function loadMoreCollects() {
+            currentCollectPage++;
+            fetch('/center/?ajax=1&type=collects&page=' + currentCollectPage)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    const container = document.getElementById('collects-container');
+                    data.data.forEach(movie => {
+                        const html = `
+                            <div class="movie-item">
+                                <a href="/movie/${movie.movie_ID}/details/">
+                                    <img class="movie-poster" src="${movie.poster}" alt="${movie.name}">
+                                </a>
+                                <div class="movie-info">
+                                    <div class="movie-title" title="${movie.name}">${movie.name}</div>
+                                    <div class="movie-score">
+                                        <i class="fas fa-star me-1"></i>${movie.movie_score}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', html);
+                    });
+                    if (!data.has_more) {
+                        document.querySelector('#section-collects .load-more').style.display = 'none';
+                    }
+                } else {
+                    document.querySelector('#section-collects .load-more').style.display = 'none';
+                }
+            });
+        }
+
         document.addEventListener('error', function(e) {
             const target = e.target;
             if (target.tagName === 'IMG' && target.src.indexOf('/static/img/wt.jpg') === -1) {
                 target.src = '/static/img/wt.jpg';
-                target.alt = '图片加载失败';
             }
         }, true);
-
-        // 个人信息编辑切换
-        const showProfileEditBtn = document.getElementById('showProfileEdit');
-        const profileDisplay = document.getElementById('profileDisplay');
-        const profileEditForm = document.getElementById('profileEditForm');
-        const cancelProfileEditBtn = document.getElementById('cancelProfileEdit');
-
-        showProfileEditBtn.addEventListener('click', function() {
-            profileDisplay.style.display = 'none';
-            profileEditForm.style.display = 'block';
-            this.style.display = 'none'; // 隐藏编辑按钮
-        });
-
-        cancelProfileEditBtn.addEventListener('click', function() {
-            profileEditForm.style.display = 'none';
-            profileDisplay.style.display = 'block';
-            showProfileEditBtn.style.display = 'block'; // 显示编辑按钮
-        });
-
-        // 密码修改切换
-        const showPasswordEditBtn = document.getElementById('showPasswordEdit');
-        const passwordDisplay = document.getElementById('passwordDisplay');
-        const passwordEditForm = document.getElementById('passwordEditForm');
-        const cancelPasswordEditBtn = document.getElementById('cancelPasswordEdit');
-
-        showPasswordEditBtn.addEventListener('click', function() {
-            passwordDisplay.style.display = 'none';
-            passwordEditForm.style.display = 'block';
-            this.style.display = 'none'; // 隐藏修改按钮
-        });
-
-        cancelPasswordEditBtn.addEventListener('click', function() {
-            passwordEditForm.style.display = 'none';
-            passwordDisplay.style.display = 'block';
-            showPasswordEditBtn.style.display = 'block'; // 显示修改按钮
-            // 重置表单状态
-            document.getElementById('passwordFormSection').style.display = 'none';
-            document.getElementById('submitBtn').style.display = 'none';
-        });
-
-        // 密码修改功能核心逻辑（保留原逻辑）
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailInput = document.getElementById('email');
-            const verifyBtn = document.getElementById('verifyEmailBtn');
-            const passwordSection = document.getElementById('passwordFormSection');
-            const emailError = document.getElementById('emailError');
-            const passwordForm = document.getElementById('passwordForm');
-            const newPasswordInput = document.getElementById('new_password');
-            const confirmPasswordInput = document.getElementById('confirm_password');
-            const passwordLengthError = document.getElementById('passwordLengthError');
-            const passwordMismatchError = document.getElementById('passwordMismatchError');
-            const submitBtn = document.getElementById('submitBtn');
-
-            const userDatabaseEmail = "{{ queryset_user.email|default:'' }}";
-
-            // 邮箱验证按钮点击事件
-            verifyBtn.addEventListener('click', function() {
-                const inputEmail = emailInput.value.trim();
-                emailError.style.display = 'none';
-
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(inputEmail)) {
-                    alert('请输入有效的邮箱地址');
-                    return;
-                }
-
-                if (inputEmail !== userDatabaseEmail) {
-                    emailError.style.display = 'block';
-                    return;
-                }
-
-                passwordSection.style.display = 'block';
-                submitBtn.style.display = 'block';
-                alert('邮箱验证通过！请设置新密码');
-                newPasswordInput.focus();
-            });
-
-            // 密码输入验证
-            newPasswordInput.addEventListener('input', function() {
-                const password = this.value;
-                if (password.length < 6) {
-                    passwordLengthError.style.display = 'block';
-                } else {
-                    passwordLengthError.style.display = 'none';
-                }
-                checkPasswordMatch();
-            });
-
-            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-
-            function checkPasswordMatch() {
-                const newPwd = newPasswordInput.value;
-                const confirmPwd = confirmPasswordInput.value;
-                if (newPwd && confirmPwd && newPwd !== confirmPwd) {
-                    passwordMismatchError.style.display = 'block';
-                } else {
-                    passwordMismatchError.style.display = 'none';
-                }
-            }
-
-            // 表单提交
-            passwordForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                let isValid = true;
-
-                if (emailInput.value.trim() !== userDatabaseEmail) {
-                    emailError.style.display = 'block';
-                    isValid = false;
-                }
-
-                if (newPasswordInput.value.length < 6) {
-                    passwordLengthError.style.display = 'block';
-                    isValid = false;
-                }
-
-                if (newPasswordInput.value !== confirmPasswordInput.value) {
-                    passwordMismatchError.style.display = 'block';
-                    isValid = false;
-                }
-
-                if (!isValid) return;
-
-                const formData = new FormData(passwordForm);
-                fetch('/user/password/update/', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        window.location.href = data.login_url;
-                    } else {
-                        alert('修改失败：' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('网络错误：', error);
-                    alert('网络错误，请稍后再试');
-                });
-            });
-        });
     </script>
 {% endblock %}

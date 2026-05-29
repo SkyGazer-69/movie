@@ -24,7 +24,7 @@ class UserBasedCF():
                 self.movie_popularity[movie] = self.movie_popularity.get(movie, 0) + 1
 
     def calc_user_sim(self):
-        """计算用户相似度（余弦相似度）"""
+        # 计算用户相似度 余弦相似度
         # 构建电影 - 用户倒排索引
         movie_user = {}
         for user, movies in self.train_data.items():
@@ -137,4 +137,4 @@ if __name__ == '__main__':
     userCF.save_to_db()
     print("✓ 推荐结果已保存到 myapp_rec 表")
     print("=" * 50)
-    print("推荐系统更新成功！")
+    print("推荐系统更新成功")

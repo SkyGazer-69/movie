@@ -50,7 +50,7 @@ class LoginForm(forms.Form):
         }
     )
 
-
+# 登入
 def login_user(request):
     if request.method == "GET":
         return render(request, 'login.html')
@@ -75,7 +75,7 @@ def login_user(request):
             return render(request, 'login.html', {'form': form})
     return HttpResponse(status=405)
 
-
+# 注册提示信息
 class RegisterForm(forms.Form):
     username = forms.CharField(
         required=True,
@@ -111,7 +111,7 @@ class RegisterForm(forms.Form):
                 raise ValidationError("您输入的密码不一致,请重新输入!")
         return self.cleaned_data
 
-
+# 注册
 def register(request):
     if request.method == "GET":
         return render(request, "register.html")
@@ -152,6 +152,7 @@ def front_index(request):
     queryset_hot = Movie.objects.order_by('-moive_time', 'movie_ID')[:8]
     queryset_high = Movie.objects.order_by('-movie_score', 'movie_ID')[:8]
     return render(request, 'front_index.html', {"queryset_hot": queryset_hot, "queryset_high": queryset_high})
+
 
 @cache_page(60 * 120)
 def rank(request):
@@ -282,7 +283,7 @@ def depot(request, *args, **kwargs):
         }
     )
 
-
+# 详情页
 def details(request, uid):
     movie_information = Movie.objects.filter(movie_ID=uid)
     movie_name = ""
@@ -335,14 +336,14 @@ def details(request, uid):
     }
     return render(request, 'front_details.html', context)
 
-
+# 收藏功能
 def collect(request):
     collect_user = request.user.username
     collect_movie = request.GET.get('movie_name')
     queryset_collect = Collect.objects.filter(collect_user=collect_user)
     list_movie = Movie.objects.get(name=collect_movie)
     if queryset_collect.filter(collect_movie=collect_movie).exists():
-        queryset_collect.filter(collect_movie=collect_movie).delete()  # 取消收藏
+        queryset_collect.filter(collect_movie=collect_movie).delete()
         return JsonResponse({"status": "uncollect", "message": "取消收藏"})
     else:
         file_list = {
@@ -353,7 +354,7 @@ def collect(request):
         Collect.objects.create(**file_list)
         return JsonResponse({"status": "collect", "message": "收藏成功"})
 
-
+# 添加评论功能
 def comment_add(request):
     try:
         comment_score = request.POST.get('comment_score', '').strip()
@@ -403,7 +404,7 @@ def recommend(request):
         except Movie.DoesNotExist:
             continue
 
-    # 如果推荐电影不足，补充热门电影
+    # 推荐电影不足，补充热门电影
     if len(recommended_movies) < 10:
         hot_movies = Movie.objects.order_by('-movie_score', '-moive_time')
         for movie in hot_movies:
@@ -423,14 +424,24 @@ def recommend(request):
 @login_required
 def center(request):
     try:
-        # 1. 查询当前登录用户信息
         queryset_user = UserInfo.objects.get(username=request.user.username)
-        # 2. 查询用户评论
-        queryset_comment = Comment.objects.filter(comment_user=queryset_user.user_ID)
-        # 3. 查询用户收藏
+        queryset_comment = Comment.objects.filter(comment_user=queryset_user.user_ID).order_by('-comment_time')
         queryset_collect = Collect.objects.filter(collect_user=request.user.username)
 
-        # 评论分页处理
+        comment_count = queryset_comment.count()
+        collect_count = queryset_collect.count()
+
+        account_level = "初级"
+        if comment_count + collect_count >= 10:
+            account_level = "中级"
+        if comment_count + collect_count >= 30:
+            account_level = "高级"
+        if comment_count + collect_count >= 50:
+            account_level = "资深"
+
+        recent_comments = queryset_comment[:5]
+        recent_collects = queryset_collect[:6]
+
         page_object = Pagination(request, queryset_comment)
         processed_page_queryset = []
         for comment in page_object.page_queryset:
@@ -445,19 +456,42 @@ def center(request):
                 'masked_user_id': masked_user_id,
                 'comment_date': comment_date,
             })
+
+        processed_recent_comments = []
+        for comment in recent_comments:
+            user_id = comment.comment_user
+            if len(user_id) > 8:
+                masked_user_id = f"{user_id[:4]}...{user_id[-4:]}"
+            else:
+                masked_user_id = user_id
+            comment_date = comment.comment_time.date()
+            processed_recent_comments.append({
+                'obj': comment,
+                'masked_user_id': masked_user_id,
+                'comment_date': comment_date,
+            })
     except UserInfo.DoesNotExist:
         queryset_user = None
         queryset_collect = []
         processed_page_queryset = []
+        processed_recent_comments = []
+        recent_collects = []
         page_object = None
+        comment_count = 0
+        collect_count = 0
+        account_level = "未登录"
 
     context = {
         "queryset_user": queryset_user,
         "queryset_collect": queryset_collect,
+        "recent_collects": recent_collects,
         "queryset": processed_page_queryset,
+        "recent_comments": processed_recent_comments,
         "page_string": page_object.html() if page_object else "",
+        "comment_count": comment_count,
+        "collect_count": collect_count,
+        "account_level": account_level,
     }
-    # 渲染个人中心模板
     return render(request, 'front_center.html', context)
 
 
@@ -510,8 +544,8 @@ def movie(request):
     context = {
         "form": form,
         "search_data": search_data,
-        "queryset": page_object.page_queryset,  # 分页后的数据
-        "page_string": page_object.html()  # 分页页码HTML
+        "queryset": page_object.page_queryset,  # 分页数据
+        "page_string": page_object.html()  # 分页页码
     }
     # 渲染电影管理页面模板
     return render(request, 'admin_movie.html', context)
@@ -709,30 +743,37 @@ def update_password(request):
     if request.method == 'POST':
         user = request.user
         try:
-            email = request.POST.get('email', '').strip()
+            old_password = request.POST.get('old_password', '').strip()
             new_password = request.POST.get('new_password', '').strip()
             confirm_password = request.POST.get('confirm_password', '').strip()
 
-            if user.email != email:
-                return JsonResponse({'success': False, 'message': '邮箱与当前账号不匹配！'})
+            if not authenticate(username=user.username, password=old_password):
+                return JsonResponse({'success': False, 'message': '原密码错误！'})
+
             if new_password != confirm_password:
                 return JsonResponse({'success': False, 'message': '两次密码输入不一致！'})
+
             if len(new_password) < 6:
                 return JsonResponse({'success': False, 'message': '新密码长度不能少于6位！'})
+
+            if old_password == new_password:
+                return JsonResponse({'success': False, 'message': '新密码不能与原密码相同！'})
+
             user.set_password(new_password)
             user.save()
-            logout(request)  # 密码修改后主动登出
+            logout(request)
 
             return JsonResponse({
                 'success': True,
                 'message': '密码修改成功，请重新登录！',
-                'login_url': '/login/'  # 登录页路径
+                'login_url': '/login/'
             })
 
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'修改失败：{str(e)}'})
 
     return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
+
 
 @cache_page(60 * 120)
 @superuser_required
@@ -1015,5 +1056,166 @@ def admin_index(request):
     return render(request, 'admin_index.html', context)
 
 
+@login_required
+def delete_comment(request):
+    if request.method == 'POST':
+        comment_id = request.POST.get('comment_id')
+        try:
+            user = UserInfo.objects.get(username=request.user.username)
+            comment = Comment.objects.get(comment_ID=comment_id, comment_user=user.user_ID)
+            comment.delete()
+            return JsonResponse({'success': True, 'message': '评论删除成功！'})
+        except Comment.DoesNotExist:
+            return JsonResponse({'success': False, 'message': '评论不存在或无权限删除！'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'删除失败：{str(e)}'})
+    return JsonResponse({'success': False, 'message': '仅支持POST请求！'})
 
+
+@login_required
+def update_avatar(request):
+    if request.method == 'POST':
+        try:
+            avatar = request.POST.get('avatar', '')
+            if not avatar:
+                return JsonResponse({'success': False, 'message': '请选择头像'})
+
+            user = request.user
+            user.avatar = avatar
+            user.save()
+
+            return JsonResponse({'success': True, 'message': '头像更新成功'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'更新失败：{str(e)}'})
+    return JsonResponse({'success': False, 'message': '仅支持POST请求'})
+
+
+@login_required
+def center(request):
+    try:
+        queryset_user = UserInfo.objects.get(username=request.user.username)
+        queryset_comment = Comment.objects.filter(comment_user=queryset_user.user_ID).order_by('-comment_time')
+        queryset_collect = Collect.objects.filter(collect_user=request.user.username)
+
+        comment_count = queryset_comment.count()
+        collect_count = queryset_collect.count()
+
+        account_level = "初级"
+        if comment_count + collect_count >= 10:
+            account_level = "中级"
+        if comment_count + collect_count >= 30:
+            account_level = "高级"
+        if comment_count + collect_count >= 50:
+            account_level = "资深"
+
+        recent_comments = queryset_comment[:5]
+        recent_collects = queryset_collect[:6]
+
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
+
+        if is_ajax:
+            page = int(request.GET.get('page', 1))
+            page_size = 10
+            data_type = request.GET.get('type', 'comments')
+
+            if data_type == 'comments':
+                start = (page - 1) * page_size
+                end = start + page_size
+                comments = queryset_comment[start:end]
+
+                processed_comments = []
+                for comment in comments:
+                    user_id = comment.comment_user
+                    if len(user_id) > 8:
+                        masked_user_id = f"{user_id[:4]}...{user_id[-4:]}"
+                    else:
+                        masked_user_id = user_id
+                    comment_date = comment.comment_time.date()
+                    processed_comments.append({
+                        'comment_ID': comment.comment_ID,
+                        'movie': comment.movie,
+                        'discussion': comment.discussion,
+                        'comment_score': comment.comment_score,
+                        'comment_date': str(comment_date),
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'data': processed_comments,
+                    'has_more': end < comment_count,
+                    'total': comment_count
+                })
+
+            elif data_type == 'collects':
+                start = (page - 1) * page_size
+                end = start + page_size
+                collects = queryset_collect[start:end]
+
+                collect_data = []
+                for obj in collects:
+                    collect_data.append({
+                        'movie_ID': obj.movie_information.movie_ID,
+                        'name': obj.movie_information.name,
+                        'poster': obj.movie_information.poster if obj.movie_information.poster and obj.movie_information.poster != '' else '/static/img/wt.jpg',
+                        'movie_score': obj.movie_information.movie_score if obj.movie_information.movie_score else '暂无'
+                    })
+
+                return JsonResponse({
+                    'success': True,
+                    'data': collect_data,
+                    'has_more': end < collect_count,
+                    'total': collect_count
+                })
+
+        page_object = Pagination(request, queryset_comment)
+        processed_page_queryset = []
+        for comment in page_object.page_queryset:
+            user_id = comment.comment_user
+            if len(user_id) > 8:
+                masked_user_id = f"{user_id[:4]}...{user_id[-4:]}"
+            else:
+                masked_user_id = user_id
+            comment_date = comment.comment_time.date()
+            processed_page_queryset.append({
+                'obj': comment,
+                'masked_user_id': masked_user_id,
+                'comment_date': comment_date,
+            })
+
+        processed_recent_comments = []
+        for comment in recent_comments:
+            user_id = comment.comment_user
+            if len(user_id) > 8:
+                masked_user_id = f"{user_id[:4]}...{user_id[-4:]}"
+            else:
+                masked_user_id = user_id
+            comment_date = comment.comment_time.date()
+            processed_recent_comments.append({
+                'obj': comment,
+                'masked_user_id': masked_user_id,
+                'comment_date': comment_date,
+            })
+    except UserInfo.DoesNotExist:
+        queryset_user = None
+        queryset_collect = []
+        processed_page_queryset = []
+        processed_recent_comments = []
+        recent_collects = []
+        page_object = None
+        comment_count = 0
+        collect_count = 0
+        account_level = "未登录"
+
+    context = {
+        "queryset_user": queryset_user,
+        "queryset_collect": queryset_collect,
+        "recent_collects": recent_collects,
+        "queryset": processed_page_queryset,
+        "recent_comments": processed_recent_comments,
+        "page_string": page_object.html() if page_object else "",
+        "comment_count": comment_count,
+        "collect_count": collect_count,
+        "account_level": account_level,
+    }
+    return render(request, 'front_center.html', context)
 
